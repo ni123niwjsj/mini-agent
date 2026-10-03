@@ -1,16 +1,118 @@
-"""Agent ReAct 核心调度循环 (业务无关)。"""
+"""Agent ReAct 核心调度循环 (业务无关内核)。
 
-from typing import AsyncGenerator, Any
+负责协调：
+1. AgentContext (上下文与记忆)
+2. LLMClient (大模型思考与流式吐字)
+3. ToolRegistry (工具查找与执行)
+
+通过单向事件流 (AsyncGenerator) 依次发射 7 种生命周期事件：
+- AgentStart: 任务启动
+- AssistantDelta: 模型流式吐字
+- AssistantMessage: 本轮模型输出完毕
+- ToolCallStart: 触发工具调用
+- ToolResult: 工具执行完毕
+- AgentEnd: 循环结束
+- Error: 异常报错
+"""
+
+from typing import Any, AsyncGenerator, Optional
+from mini_agent.ai.client import LLMClient
+from mini_agent.ai.types import ModelResponse
 from mini_agent.core.context import AgentContext
-from mini_agent.core.events import AgentStart, AgentEnd, Error
+from mini_agent.core.events import (
+    AgentEnd,
+    AgentStart,
+    AssistantDelta,
+    AssistantMessage,
+    Error,
+    ToolCallStart,
+    ToolResult,
+)
+from mini_agent.tools.registry import ToolRegistry
 
 
 async def agent_loop(
     context: AgentContext,
-    llm_client: Any,
-    tool_registry: Any,
+    llm_client: LLMClient,
+    tool_registry: ToolRegistry,
 ) -> AsyncGenerator[Any, None]:
-    """核心 ReAct 调度生成器，逐个产出生命周期事件。"""
-    # 待具体实现
-    yield AgentStart(user_prompt="TODO")
-    yield AgentEnd(final_response="TODO")
+    """ReAct 核心调度生成器。
+    
+    外层通过 async for event in agent_loop(...) 即可消费完整的生命周期。
+    """
+    last_prompt = context.get_last_user_prompt()
+    yield AgentStart(user_prompt=last_prompt)
+
+    turn_count = 0
+
+    try:
+        while turn_count < context.max_turns:
+            turn_count += 1
+
+            # 1. 组装当前上下文与工具清单
+            messages = context.get_messages_for_llm()
+            tools = tool_registry.get_schemas()
+
+            # 2. 调用大模型，实时流式消费
+            response: Optional[ModelResponse] = None
+            async for event_type, data in llm_client.stream_chat(messages, tools=tools):
+                if event_type == "text_delta":
+                    yield AssistantDelta(content=data, is_reasoning=False)
+                elif event_type == "reasoning_delta":
+                    yield AssistantDelta(content=data, is_reasoning=True)
+                elif event_type == "response":
+                    response = data
+
+            if response is None:
+                yield Error(message="大模型未返回有效推理结果。")
+                break
+
+            # 3. 本轮模型思考/回复完毕
+            yield AssistantMessage(
+                content=response.content,
+                tool_calls=[
+                    {"id": tc.id, "name": tc.name, "arguments": tc.arguments}
+                    for tc in response.tool_calls
+                ],
+            )
+
+            # 4. 把模型回复写入上下文
+            context.add_assistant_message(
+                content=response.content,
+                tool_calls=response.tool_calls,
+            )
+
+            # 5. 判断终止条件：如果大模型没有要求调用任何工具，说明任务已搞定，退出！
+            if not response.tool_calls:
+                yield AgentEnd(final_response=response.content, total_turns=turn_count)
+                return
+
+            # 6. 如果大模型要求调用工具：依次派发执行
+            for tc in response.tool_calls:
+                # 6.1 广播工具开始执行事件
+                yield ToolCallStart(
+                    tool_name=tc.name,
+                    tool_call_id=tc.id,
+                    arguments=tc.arguments,
+                )
+
+                # 6.2 在 ToolRegistry 中安全派发执行
+                res = await tool_registry.execute(tc.name, tc.arguments)
+
+                # 6.3 广播工具执行结果事件
+                yield ToolResult(
+                    tool_name=tc.name,
+                    tool_call_id=tc.id,
+                    output=res.content,
+                    is_error=res.is_error,
+                )
+
+                # 6.4 将执行结果写回上下文，让模型在下一轮循环看到
+                context.add_tool_result(tc.id, res.content)
+
+        # 超过最大轮数防御机制 (避免模型死循环烧 Token)
+        yield Error(message=f"已达到最大轮数限制 ({context.max_turns})，强制终止。")
+        yield AgentEnd(final_response="任务超过最大轮数限制，已中止。", total_turns=turn_count)
+
+    except Exception as e:
+        yield Error(message=f"Agent 运行时发生未捕获异常: {str(e)}", exception=e)
