@@ -55,9 +55,9 @@ class MiniAgent:
     def _register_default_tools(self, workspace_dir: str) -> None:
         """注册默认基础工具集"""
         self.registry.register(add)
-        self.registry.register(ReadFileTool())
-        self.registry.register(WriteFileTool())
-        self.registry.register(EditFileTool())
+        self.registry.register(ReadFileTool(workspace_dir=workspace_dir))
+        self.registry.register(WriteFileTool(workspace_dir=workspace_dir))
+        self.registry.register(EditFileTool(workspace_dir=workspace_dir))
         self.registry.register(BashTool(cwd=workspace_dir))
 
     def register_tool(self, tool_or_func: Union[BaseTool, Callable]) -> None:
