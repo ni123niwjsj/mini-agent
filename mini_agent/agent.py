@@ -5,10 +5,11 @@
 """
 
 import os
-from typing import Any, AsyncGenerator, Callable, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, Union
 from mini_agent.ai.client import LLMClient
 from mini_agent.core.context import AgentContext
 from mini_agent.core.loop import agent_loop
+from mini_agent.core.session import SessionManager
 from mini_agent.tools.base import BaseTool, tool
 from mini_agent.tools.registry import ToolRegistry
 from mini_agent.tools.file import ReadFileTool, WriteFileTool
@@ -42,15 +43,83 @@ class MiniAgent:
         client: Optional[LLMClient] = None,
         system_prompt: Optional[str] = None,
         workspace_dir: str = ".",
+        sessions_dir: Optional[str] = ".sessions",
+        session_id: Optional[str] = None,
+        max_turns: Optional[int] = None,
+        auto_compact_threshold: Optional[float] = None,
     ):
         self.workspace_dir = os.path.abspath(workspace_dir)
         self.client = client or LLMClient()
         
+        # 初始化 SessionManager (若 sessions_dir 为 None 则禁用持久化)
+        if sessions_dir is not None:
+            self.session_manager: Optional[SessionManager] = SessionManager(
+                storage_dir=sessions_dir,
+                session_id=session_id,
+                cwd=self.workspace_dir,
+                model=getattr(self.client, "model", ""),
+            )
+        else:
+            self.session_manager = None
+
         prompt = system_prompt or build_system_prompt(self.workspace_dir)
-        self.context = AgentContext(system_prompt=prompt)
+        initial_context_window = self.client.get_context_window(self.client.model)
+        context_kwargs: Dict[str, Any] = {
+            "system_prompt": prompt,
+            "session_manager": self.session_manager,
+            "context_window": initial_context_window,
+        }
+        if max_turns is not None:
+            context_kwargs["max_turns"] = max_turns
+        if auto_compact_threshold is not None:
+            context_kwargs["auto_compact_threshold"] = auto_compact_threshold
+
+        self.context = AgentContext(**context_kwargs)
+
+        # 如果指定了已存在会话，则加载历史消息
+        if self.session_manager and session_id:
+            session_file = self.session_manager.get_session_file(session_id)
+            if os.path.exists(session_file):
+                self.load_session(session_id)
         
         self.registry = ToolRegistry()
         self._register_default_tools(self.workspace_dir)
+
+    @property
+    def current_session_id(self) -> Optional[str]:
+        """获取当前活跃的会话 ID"""
+        return self.session_manager.current_session_id if self.session_manager else None
+
+    def new_session(self, session_id: Optional[str] = None) -> str:
+        """开启全新会话并清空当前上下文"""
+        self.context.clear()
+        if self.session_manager:
+            sid = self.session_manager.create_session(
+                session_id=session_id,
+                cwd=self.workspace_dir,
+                model=getattr(self.client, "model", ""),
+            )
+            return sid
+        return ""
+
+    def load_session(self, session_id: str) -> Tuple[Dict[str, Any], int]:
+        """恢复指定历史会话到当前上下文。
+        
+        Returns:
+            Tuple[header, message_count]: 会话元数据与恢复的消息条数
+        """
+        if not self.session_manager:
+            raise RuntimeError("未启用 SessionManager 持久化管理器")
+
+        header, messages = self.session_manager.load_session(session_id)
+        self.context.load_messages(messages)
+        return header, len(messages)
+
+    def list_sessions(self) -> List[Dict[str, Any]]:
+        """获取所有历史会话概要列表"""
+        if not self.session_manager:
+            return []
+        return self.session_manager.list_sessions()
 
     def _register_default_tools(self, workspace_dir: str) -> None:
         """注册默认基础工具集"""
@@ -64,8 +133,17 @@ class MiniAgent:
         """供用户自定义挂载新工具"""
         self.registry.register(tool_or_func)
 
-    async def stream(self, prompt: str) -> AsyncGenerator[Any, None]:
-        """流式运行任务并返回事件流"""
-        self.context.add_user_message(prompt)
+    async def stream(
+        self,
+        prompt: Union[str, List[Dict[str, Any]]],
+        images: Optional[List[Dict[str, str]]] = None,
+    ) -> AsyncGenerator[Any, None]:
+        """流式运行任务并返回事件流 (支持纯文本与多模态图文输入)"""
+        self.context.add_user_message(prompt, images=images)
         async for event in agent_loop(self.context, self.client, self.registry):
             yield event
+
+    async def compact(self, keep_recent_turns: int = 2) -> Optional[Dict[str, Any]]:
+        """手动对当前 Agent 上下文执行原子压缩"""
+        from mini_agent.core.compaction import perform_compaction
+        return await perform_compaction(self.context, self.client, keep_recent_turns=keep_recent_turns)

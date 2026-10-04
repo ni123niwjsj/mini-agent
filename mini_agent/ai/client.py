@@ -10,7 +10,21 @@
 import json
 import os
 from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
-from mini_agent.ai.types import ModelResponse, ToolCall
+from mini_agent.ai.types import ModelResponse, ToolCall, TokenUsage
+from mini_agent.ai.catalog import ModelSpec, infer_context_window, resolve_context_window
+
+
+def sanitize_proxy_env():
+    """自动规范化系统代理环境变量。
+    
+    解决在 Linux (如 Clash / Mihomo 7897 端口) 下代理协议为 socks:// 时，
+    httpx 原生报错 'Unknown scheme for proxy URL' 的问题。
+    将其平滑映射为 http:// 混合协议。
+    """
+    for key in ("all_proxy", "ALL_PROXY", "http_proxy", "HTTP_PROXY", "https_proxy", "HTTPS_PROXY"):
+        val = os.environ.get(key)
+        if val and val.startswith("socks://"):
+            os.environ[key] = val.replace("socks://", "http://", 1)
 
 
 class LLMClient:
@@ -21,10 +35,77 @@ class LLMClient:
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         model: str = "gpt-4o",
+        reasoning_effort: Optional[str] = None,
     ):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY", "EMPTY")
         self.base_url = base_url or os.getenv("OPENAI_BASE_URL", None)
         self.model = model
+        self.reasoning_effort = reasoning_effort or os.getenv("REASONING_EFFORT", None)
+        self._model_specs_cache: Dict[str, int] = {}
+        self._specs_list: List[ModelSpec] = []
+
+    def get_context_window(self, model_name: Optional[str] = None) -> int:
+        """获取指定模型（或当前激活模型）的上下文窗口上限 (Tokens)"""
+        target = model_name or self.model
+        return resolve_context_window(target, self._model_specs_cache)
+
+    async def get_model_catalog(self, force_refresh: bool = False) -> List[ModelSpec]:
+        """动态从 Provider 服务端获取包含上下文规格的模型列表 (GET /v1/models)"""
+        if self._specs_list and not force_refresh:
+            return self._specs_list
+
+        if self.model == "mock":
+            mock_specs = [
+                ModelSpec(id="mock", name="Mock Model", context_length=128000),
+                ModelSpec(id="deepseek/deepseek-v4-flash", name="DeepSeek V4 Flash", context_length=1000000),
+                ModelSpec(id="claude-sonnet-4-6", name="Claude Sonnet 4.6", context_length=1000000),
+                ModelSpec(id="gpt-4o", name="GPT-4o", context_length=128000),
+                ModelSpec(id="qwen3.6-35b-a3b", name="Qwen 3.6 35B", context_length=262144),
+            ]
+            self._specs_list = mock_specs
+            self._model_specs_cache = {s.id: s.context_length for s in mock_specs}
+            return self._specs_list
+
+        try:
+            from openai import AsyncOpenAI
+            sanitize_proxy_env()
+            client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
+            models_page = await client.models.list()
+            
+            specs: List[ModelSpec] = []
+            specs_cache: Dict[str, int] = {}
+            for m in models_page.data:
+                # 优先提取服务端返回的真实 context_length (CommandCode, OpenRouter 等)
+                ctx_len = (
+                    getattr(m, "context_length", None)
+                    or (getattr(m, "model_extra", None) or {}).get("context_length")
+                    or (getattr(m, "model_extra", None) or {}).get("context_window")
+                )
+                if not ctx_len or not isinstance(ctx_len, int) or ctx_len <= 0:
+                    ctx_len = infer_context_window(m.id)
+
+                m_name = (
+                    getattr(m, "name", None)
+                    or (getattr(m, "model_extra", None) or {}).get("name")
+                    or m.id
+                )
+                spec = ModelSpec(id=m.id, name=m_name, context_length=ctx_len)
+                specs.append(spec)
+                specs_cache[m.id] = ctx_len
+
+            self._specs_list = specs
+            self._model_specs_cache = specs_cache
+            return specs
+        except Exception:
+            # 网络异常或接口不通时，优雅降级为启发式规则推断
+            fallback_len = infer_context_window(self.model)
+            self._model_specs_cache[self.model] = fallback_len
+            return [ModelSpec(id=self.model, name=self.model, context_length=fallback_len)]
+
+    async def list_models(self) -> List[str]:
+        """动态从 Provider 服务端获取可用模型 ID 列表"""
+        specs = await self.get_model_catalog()
+        return [s.id for s in specs]
 
     async def stream_chat(
         self,
@@ -52,6 +133,7 @@ class LLMClient:
                 "或在测试时将 model 设为 'mock'。"
             )
 
+        sanitize_proxy_env()
         client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
 
         # 准备请求参数
@@ -59,7 +141,11 @@ class LLMClient:
             "model": self.model,
             "messages": messages,
             "stream": True,
+            "stream_options": {"include_usage": True},
         }
+        # 如果指定了思考强度 (如 low, medium, high)，注入参数
+        if self.reasoning_effort:
+            kwargs["reasoning_effort"] = self.reasoning_effort
         if tools and len(tools) > 0:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
@@ -70,8 +156,33 @@ class LLMClient:
         # 累积流式工具调用的缓存字典: index -> {"id": ..., "name": ..., "arguments_str": ...}
         tool_calls_acc: Dict[int, Dict[str, str]] = {}
         finish_reason = None
+        captured_usage: Optional[TokenUsage] = None
 
         async for chunk in response:
+            # 捕获 Token 使用统计 (流式末尾 chunk 携带 usage 信息)
+            usage_obj = getattr(chunk, "usage", None)
+            if usage_obj:
+                p_tok = getattr(usage_obj, "prompt_tokens", 0) or 0
+                c_tok = getattr(usage_obj, "completion_tokens", 0) or 0
+                t_tok = getattr(usage_obj, "total_tokens", 0) or (p_tok + c_tok)
+                cached = 0
+                
+                # 兼容各主流服务商 (OpenAI, DeepSeek, Anthropic 兼容代理)
+                details = getattr(usage_obj, "prompt_tokens_details", None)
+                if details:
+                    cached = getattr(details, "cached_tokens", 0) or 0
+                if not cached:
+                    cached = getattr(usage_obj, "prompt_cache_hit_tokens", 0) or 0
+                if not cached:
+                    cached = getattr(usage_obj, "cache_read_input_tokens", 0) or 0
+
+                captured_usage = TokenUsage(
+                    prompt_tokens=p_tok,
+                    completion_tokens=c_tok,
+                    total_tokens=t_tok,
+                    cached_tokens=cached,
+                )
+
             if not chunk.choices:
                 continue
 
@@ -134,6 +245,7 @@ class LLMClient:
                 content=full_content,
                 tool_calls=final_tool_calls,
                 finish_reason=finish_reason,
+                usage=captured_usage,
             ),
         )
 
@@ -144,6 +256,13 @@ class LLMClient:
     ) -> AsyncGenerator[Tuple[str, Any], None]:
         """内置离线模拟测试流：模拟模型流式吐字并决定调用工具"""
         import asyncio
+
+        mock_usage = TokenUsage(
+            prompt_tokens=42,
+            completion_tokens=18,
+            total_tokens=60,
+            cached_tokens=25,
+        )
 
         last_user_msg = ""
         for m in reversed(messages):
@@ -165,6 +284,7 @@ class LLMClient:
                     content="".join(tokens),
                     tool_calls=[],
                     finish_reason="stop",
+                    usage=mock_usage,
                 ),
             )
             return
@@ -184,6 +304,7 @@ class LLMClient:
                         ToolCall(id="call_mock_001", name="add", arguments={"a": 10, "b": 20})
                     ],
                     finish_reason="tool_calls",
+                    usage=mock_usage,
                 ),
             )
         else:
@@ -198,5 +319,6 @@ class LLMClient:
                     content="".join(tokens),
                     tool_calls=[],
                     finish_reason="stop",
+                    usage=mock_usage,
                 ),
             )

@@ -28,6 +28,17 @@ except ImportError:
     console = None
 
 
+def format_tokens(count: int) -> str:
+    """对齐 Pi 的 Token 格式化显示 (如 120, 1.5k, 128k, 1.2M)"""
+    if count < 1000:
+        return str(count)
+    if count < 10000:
+        return f"{count / 1000:.1f}k"
+    if count < 1000000:
+        return f"{round(count / 1000)}k"
+    return f"{count / 1000000:.1f}M"
+
+
 class TerminalDisplay:
     """统一的终端事件渲染器"""
 
@@ -35,14 +46,24 @@ class TerminalDisplay:
         self._in_reasoning = False
         self._streamed_text = False
 
-    def print_banner(self, workspace_dir: str, model_name: str, tools_count: int) -> None:
+    def print_banner(
+        self,
+        workspace_dir: str,
+        model_name: str,
+        tools_count: int,
+        session_id: Optional[str] = None,
+        context_window: Optional[int] = None,
+    ) -> None:
         """打印漂亮的欢迎启动面板"""
+        session_line = f"💾 当前会话: {session_id}\n" if session_id else ""
+        win_str = f" [窗口: {format_tokens(context_window)}]" if context_window else ""
         banner_text = (
             f"🤖 Mini-Agent CLI (v0.1.0)\n"
             f"📁 工作空间: {workspace_dir}\n"
-            f"🧠 激活模型: {model_name}\n"
+            f"🧠 激活模型: {model_name}{win_str}\n"
+            f"{session_line}"
             f"🔧 已加载工具: {tools_count} 个\n"
-            f"💡 快捷指令: /help (帮助) | /tools (工具列表) | /clear (清屏重置) | /exit (退出)"
+            f"💡 快捷指令: /help | /compact | /models | /usage | /sessions | /resume <id> | /tools | /exit"
         )
         if _HAS_RICH:
             console.print(Panel(banner_text, title="[bold cyan]Mini-Agent[/bold cyan]", border_style="cyan"))
@@ -51,14 +72,22 @@ class TerminalDisplay:
             print(banner_text)
             print("=" * 60 + "\n")
 
-    def print_agent_start(self, prompt: str) -> None:
+    def print_agent_start(self, prompt: Any) -> None:
         """任务启动提示"""
         self._streamed_text = False
         self._in_reasoning = False
-        if _HAS_RICH:
-            console.print(f"\n[info]▶ 正在思考任务:[/info] [bold]{prompt}[/bold]")
+        if isinstance(prompt, list):
+            text_parts = [p.get("text", "") for p in prompt if isinstance(p, dict) and p.get("type") == "text"]
+            has_img = any(isinstance(p, dict) and p.get("type") == "image_url" for p in prompt)
+            img_suffix = " 🖼️ [包含图像附件]" if has_img else ""
+            display_prompt = " ".join(text_parts) + img_suffix
         else:
-            print(f"\n▶ 正在思考任务: {prompt}")
+            display_prompt = str(prompt)
+
+        if _HAS_RICH:
+            console.print(f"\n[info]▶ 正在思考任务:[/info] [bold]{display_prompt}[/bold]")
+        else:
+            print(f"\n▶ 正在思考任务: {display_prompt}")
 
     def print_assistant_delta(self, delta: str, is_reasoning: bool = False) -> None:
         """流式吐字（打字机效果）"""
@@ -108,13 +137,53 @@ class TerminalDisplay:
         else:
             print(f"📦 {color_prefix}{tool_name} {status_text}:{reset}\n   {preview}\n")
 
-    def print_agent_end(self, total_turns: int) -> None:
-        """任务全部达成"""
+    def print_agent_end(self, total_turns: int, usage: Optional[Dict[str, Any]] = None) -> None:
+        """任务全部达成并渲染用量与缓存统计"""
         self.print_assistant_message_end()
+        status_line = f"✨ 任务已完成 (共经历 {total_turns} 轮交互)"
         if _HAS_RICH:
-            console.print(f"[success]✨ 任务已完成 (共经历 {total_turns} 轮交互)[/success]\n")
+            console.print(f"[success]{status_line}[/success]")
         else:
-            print(f"\033[32m✨ 任务已完成 (共经历 {total_turns} 轮交互)\033[0m\n")
+            print(f"\033[32m{status_line}\033[0m")
+
+        if usage and (usage.get("current_tokens", 0) > 0 or usage.get("cumulative_total_tokens", 0) > 0):
+            cur = format_tokens(usage.get("current_tokens", 0))
+            win = format_tokens(usage.get("context_window", 128000))
+            pct = usage.get("percent", 0.0)
+            cum_in = format_tokens(usage.get("cumulative_prompt_tokens", 0))
+            cum_out = format_tokens(usage.get("cumulative_completion_tokens", 0))
+            latest_r = format_tokens(usage.get("latest_cached_tokens", 0))
+            ch = usage.get("latest_cache_hit_rate", 0.0)
+
+            stats_str = (
+                f"📊 用量统计: ↑{cum_in} ↓{cum_out} | "
+                f"缓存命中: R{latest_r} (CH {ch}%) | "
+                f"上下文: {cur}/{win} ({pct}%)"
+            )
+            if _HAS_RICH:
+                console.print(f"[dim]{stats_str}[/dim]\n")
+            else:
+                print(f"\033[2m{stats_str}\033[0m\n")
+        else:
+            print()
+
+    def print_compaction_start(self, tokens_before: int) -> None:
+        """上下文压缩启动提示"""
+        self.print_assistant_message_end()
+        msg = f"⚡ 上下文达到阈值 (约 {format_tokens(tokens_before)} Tokens)，正在执行智能压缩..."
+        if _HAS_RICH:
+            console.print(f"[warning]{msg}[/warning]")
+        else:
+            print(f"\033[33m{msg}\033[0m")
+
+    def print_compaction_end(self, tokens_before: int, tokens_after: int, saved_percent: float) -> None:
+        """上下文压缩完成提示"""
+        self.print_assistant_message_end()
+        msg = f"✨ 智能压缩完成: {format_tokens(tokens_before)} -> {format_tokens(tokens_after)} Tokens (节省 {saved_percent}%)"
+        if _HAS_RICH:
+            console.print(f"[success]{msg}[/success]\n")
+        else:
+            print(f"\033[32m{msg}\033[0m\n")
 
     def print_error(self, message: str) -> None:
         """全局异常或错误提示"""

@@ -33,6 +33,7 @@ class AssistantMessage:
     """本轮 Assistant 完整生成完毕事件"""
     content: str
     tool_calls: List[Dict[str, Any]] = field(default_factory=list)
+    usage: Optional[Dict[str, Any]] = None  # 本轮模型推理 Token 与缓存详情
 
 
 @dataclass
@@ -57,6 +58,24 @@ class AgentEnd:
     """Agent 整体运行结束事件"""
     final_response: str
     total_turns: int = 1
+    usage: Optional[Dict[str, Any]] = None  # 全局上下文占用与会话累计 Token 用量统计
+
+
+@dataclass
+class CompactionStart:
+    """触发上下文压缩事件"""
+    tokens_before: int = 0
+
+
+@dataclass
+class CompactionEnd:
+    """上下文压缩完成事件"""
+    tokens_before: int
+    tokens_after: int
+    saved_tokens: int
+    saved_percent: float
+    summary: str
+    details: Optional[Dict[str, Any]] = None
 
 
 @dataclass

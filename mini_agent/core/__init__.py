@@ -7,6 +7,8 @@ from mini_agent.core.events import (
     ToolCallStart,
     ToolResult,
     AgentEnd,
+    CompactionStart,
+    CompactionEnd,
     Error,
 )
 
@@ -17,5 +19,7 @@ __all__ = [
     "ToolCallStart",
     "ToolResult",
     "AgentEnd",
+    "CompactionStart",
+    "CompactionEnd",
     "Error",
 ]

@@ -1,6 +1,7 @@
-"""测试 core/loop.py 完整的 ReAct 调度循环与 7 种生命周期事件"""
+"""测试 core/loop.py 完整的 ReAct 调度循环、生命周期事件与最大轮数限制"""
 
-import asyncio
+import unittest
+from mini_agent.agent import MiniAgent
 from mini_agent.ai.client import LLMClient
 from mini_agent.core.context import AgentContext
 from mini_agent.core.loop import agent_loop
@@ -17,52 +18,96 @@ from mini_agent.tools.base import tool
 from mini_agent.tools.registry import ToolRegistry
 
 
-# 注册测试工具
 @tool(description="计算两数相加")
 def add(a: int, b: int) -> int:
     return a + b
 
 
-async def main():
-    registry = ToolRegistry()
-    registry.register(add)
+class TestCoreLoop(unittest.IsolatedAsyncioTestCase):
+    """测试核心调度循环与生命周期"""
 
-    client = LLMClient(model="mock")
-    context = AgentContext(system_prompt="你是一个全能助手。")
-    context.add_user_message("请帮我计算加法：10 + 20")
+    async def test_agent_loop_success(self):
+        registry = ToolRegistry()
+        registry.register(add)
 
-    print("🚀 开始启动 ReAct Agent Loop 调度：\n" + "=" * 50)
+        client = LLMClient(model="mock")
+        context = AgentContext(system_prompt="你是一个全能助手。")
+        context.add_user_message("请帮我计算加法：10 + 20")
 
-    async for event in agent_loop(context, client, registry):
-        if isinstance(event, AgentStart):
-            print(f"[事件 1: AgentStart] 用户提问: '{event.user_prompt}'")
+        events = []
+        async for event in agent_loop(context, client, registry):
+            events.append(event)
 
-        elif isinstance(event, AssistantDelta):
-            # 打字机流式输出
-            print(f"{event.content}", end="", flush=True)
+        # 验证发射的核心事件类型
+        event_types = [type(e) for e in events]
+        self.assertIn(AgentStart, event_types)
+        self.assertIn(AssistantDelta, event_types)
+        self.assertIn(AssistantMessage, event_types)
+        self.assertIn(ToolCallStart, event_types)
+        self.assertIn(ToolResult, event_types)
+        self.assertIn(AgentEnd, event_types)
 
-        elif isinstance(event, AssistantMessage):
-            print(f"\n[事件 3: AssistantMessage] 本轮生成完毕, 附带工具调用: {len(event.tool_calls)} 个")
+        end_event = next(e for e in events if isinstance(e, AgentEnd))
+        self.assertEqual(end_event.total_turns, 2)
 
-        elif isinstance(event, ToolCallStart):
-            print(f"\n[事件 4: ToolCallStart] 正在调用工具: {event.tool_name}, 参数: {event.arguments}")
+    async def test_max_turns_limit(self):
+        """测试轮数限制触发保护"""
+        registry = ToolRegistry()
+        registry.register(add)
 
-        elif isinstance(event, ToolResult):
-            print(f"[事件 5: ToolResult] 工具执行返回: content='{event.output}', is_error={event.is_error}\n")
+        client = LLMClient(model="mock")
+        # 将最大轮数设置为 1，而 mock 需要调用工具后第 2 轮才完结
+        context = AgentContext(system_prompt="助手", max_turns=1)
+        context.add_user_message("加法运算")
 
-        elif isinstance(event, AgentEnd):
-            print(f"[事件 6: AgentEnd] 任务圆满结束！总轮数: {event.total_turns}, 最终回答: '{event.final_response}'")
+        events = []
+        async for event in agent_loop(context, client, registry):
+            events.append(event)
 
-        elif isinstance(event, Error):
-            print(f"[事件 7: Error] 异常报警: {event.message}")
+        errors = [e for e in events if isinstance(e, Error)]
+        self.assertTrue(len(errors) > 0)
+        self.assertIn("已达到单次任务最大轮数限制", errors[0].message)
 
-    print("=" * 50)
-    print("多轮对话历史上下文记录验证:")
-    for idx, msg in enumerate(context.messages):
-        role = msg.get("role")
-        content = msg.get("content", "")
-        print(f"  {idx + 1}. [{role}]: {content[:40]}")
+    def test_max_turns_configurable(self):
+        """测试 max_turns 在 Context 与 MiniAgent 中的可配置性"""
+        ctx_default = AgentContext()
+        self.assertGreaterEqual(ctx_default.max_turns, 15)
 
+        agent = MiniAgent(sessions_dir=None, max_turns=100)
+        self.assertEqual(agent.context.max_turns, 100)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    def test_token_usage_and_cache_hit_rate(self):
+        """测试 TokenUsage 数据结构与缓存命中率计算"""
+        from mini_agent.ai.types import TokenUsage
+        u = TokenUsage(prompt_tokens=100, completion_tokens=20, total_tokens=120, cached_tokens=80)
+        self.assertEqual(u.cache_hit_rate, 80.0)
+
+        # 0 prompt tokens 场景防除零
+        u_zero = TokenUsage()
+        self.assertEqual(u_zero.cache_hit_rate, 0.0)
+
+    async def test_usage_telemetry_in_loop(self):
+        """测试 ReAct 调度循环发射并统计 Token 用量与上下文占用"""
+        registry = ToolRegistry()
+        registry.register(add)
+
+        client = LLMClient(model="mock")
+        context = AgentContext(system_prompt="助手", context_window=100000)
+        context.add_user_message("计算 10 + 20")
+
+        events = []
+        async for event in agent_loop(context, client, registry):
+            events.append(event)
+
+        end_events = [e for e in events if isinstance(e, AgentEnd)]
+        self.assertEqual(len(end_events), 1)
+        end_event = end_events[0]
+        self.assertIsNotNone(end_event.usage)
+
+        # 验证用量被正确记录在 Context 中
+        stats = context.get_context_stats()
+        self.assertGreater(stats["cumulative_prompt_tokens"], 0)
+        self.assertGreater(stats["cumulative_completion_tokens"], 0)
+        self.assertGreater(stats["latest_cache_hit_rate"], 0.0)
+        self.assertEqual(stats["context_window"], 100000)
+

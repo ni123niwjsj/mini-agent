@@ -20,10 +20,12 @@ class ToolResult:
         content: 真正返回给大模型的文本内容 (字符串)。
         is_error: 标记该次调用是否发生错误 (模型可根据错误信息自我修复)。
         details: 结构化元数据 (供 CLI / UI 展示，不占用大模型的上下文 Token)。
+        images: 可选的多模态图像数据列表，格式为 [{"data": base64_str, "mime_type": "image/png"}]。
     """
     content: str
     is_error: bool = False
     details: Optional[Dict[str, Any]] = None
+    images: Optional[List[Dict[str, str]]] = None
 
     def __str__(self) -> str:
         return self.content
@@ -128,7 +130,7 @@ class FunctionTool(BaseTool):
     async def execute(self, **kwargs: Any) -> ToolResult:
         """执行底层函数，兼容同步函数与异步协程"""
         try:
-            if asyncio.iscoroutinefunction(self.func):
+            if inspect.iscoroutinefunction(self.func):
                 raw_result = await self.func(**kwargs)
             else:
                 raw_result = self.func(**kwargs)

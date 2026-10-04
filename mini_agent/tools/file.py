@@ -7,6 +7,7 @@
 4. 详尽的错误防御：文件不存在、是目录、编码异常时返回结构化错误引导自愈。
 """
 
+import base64
 import os
 from typing import Any, Dict, Optional
 from mini_agent.tools.base import BaseTool, ToolResult
@@ -14,6 +15,15 @@ from mini_agent.tools.base import BaseTool, ToolResult
 
 DEFAULT_MAX_LINES = 400
 DEFAULT_MAX_BYTES = 50 * 1024  # 50 KB
+
+SUPPORTED_IMAGE_EXTENSIONS = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".bmp": "image/bmp",
+}
 
 
 def resolve_path(path: str, base_dir: str = ".") -> str:
@@ -24,11 +34,11 @@ def resolve_path(path: str, base_dir: str = ".") -> str:
 
 
 class ReadFileTool(BaseTool):
-    """读取指定路径文件的工具，支持行号切片与大文件安全截断"""
+    """读取指定路径文件的工具，支持文本切片与图像多模态读取"""
     name = "read_file"
     description = (
-        "读取本地文件内容。支持行号切片 (start_line/end_line)。"
-        "文件内容会附带行号前缀，超大文件会自动截断以防爆 Token。"
+        "读取本地文件内容。支持文本文件和图像文件 (png, jpg, jpeg, gif, webp, bmp)。"
+        "对文本文件支持行号切片；读取图像文件时会自动编码并附带图像数据供视觉分析。"
     )
 
     def __init__(self, workspace_dir: str = "."):
@@ -49,11 +59,11 @@ class ReadFileTool(BaseTool):
                         },
                         "start_line": {
                             "type": "integer",
-                            "description": "起始行号 (从 1 开始计数，默认第 1 行)",
+                            "description": "起始行号 (仅文本文件有效，从 1 开始计数，默认第 1 行)",
                         },
                         "end_line": {
                             "type": "integer",
-                            "description": "结束行号 (包含此行；-1 表示读到文件末尾)",
+                            "description": "结束行号 (仅文本文件有效，包含此行；-1 表示读到文件末尾)",
                         },
                     },
                     "required": ["path"],
@@ -84,7 +94,37 @@ class ReadFileTool(BaseTool):
                 details={"path": abs_path, "error": "IsADirectory"},
             )
 
-        # 2. 安全读取文本内容
+        # 2. 检查是否为支持的图像格式 (对齐 Pi 的原生多模态设计)
+        ext = os.path.splitext(abs_path)[1].lower()
+        if ext in SUPPORTED_IMAGE_EXTENSIONS:
+            mime_type = SUPPORTED_IMAGE_EXTENSIONS[ext]
+            try:
+                with open(abs_path, "rb") as f:
+                    raw_bytes = f.read()
+
+                size_kb = len(raw_bytes) / 1024
+                if len(raw_bytes) > 20 * 1024 * 1024:
+                    return ToolResult(
+                        content=f"Error: Image '{path}' ({size_kb:.1f} KB) exceeds maximum allowed size of 20 MB.",
+                        is_error=True,
+                        details={"path": abs_path, "error": "ImageTooLarge"},
+                    )
+
+                b64_data = base64.b64encode(raw_bytes).decode("utf-8")
+                return ToolResult(
+                    content=f"Successfully read image '{path}' [{mime_type}, {size_kb:.1f} KB]. Image has been attached for visual analysis.",
+                    is_error=False,
+                    details={"path": abs_path, "mime_type": mime_type, "size_bytes": len(raw_bytes)},
+                    images=[{"data": b64_data, "mime_type": mime_type}],
+                )
+            except Exception as e:
+                return ToolResult(
+                    content=f"Error reading image file '{path}': {str(e)}",
+                    is_error=True,
+                    details={"path": abs_path, "exception": str(e)},
+                )
+
+        # 3. 安全读取文本内容
         try:
             with open(abs_path, "r", encoding="utf-8", errors="replace") as f:
                 all_lines = f.readlines()

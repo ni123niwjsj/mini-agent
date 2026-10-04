@@ -55,6 +55,29 @@ def parse_args():
         default=".",
         help="指定工作空间目录 (默认当前目录)",
     )
+    parser.add_argument(
+        "-e", "--effort",
+        type=str,
+        default=os.getenv("REASONING_EFFORT", None),
+        help="指定模型思考强度 (low, medium, high)",
+    )
+    parser.add_argument(
+        "-s", "--session",
+        type=str,
+        default=None,
+        help="恢复指定的持久化会话 ID (如 20261004_130000_abc)",
+    )
+    parser.add_argument(
+        "--list-sessions",
+        action="store_true",
+        help="查看所有历史持久化会话列表后退出",
+    )
+    parser.add_argument(
+        "--max-turns",
+        type=int,
+        default=int(os.getenv("MAX_TURNS", "50")),
+        help="单次任务允许的最大轮数 (默认 50，设为 0 表示不限制)",
+    )
     return parser.parse_args()
 
 
@@ -67,26 +90,46 @@ async def run_single_prompt(agent: MiniAgent, prompt: str):
 
 def main():
     args = parse_args()
+
+    if args.list_sessions:
+        from mini_agent.core.session import SessionManager
+        sessions = SessionManager.list_sessions_in_dir(".sessions")
+        if not sessions:
+            print("📭 暂无历史会话记录。")
+        else:
+            print(f"📋 历史会话列表 (共 {len(sessions)} 个):")
+            for idx, s in enumerate(sessions, 1):
+                created = s["created_at"][:19].replace("T", " ")
+                preview = s["first_prompt"] or "(新会话/无提问)"
+                print(f"  [{idx}] {s['session_id']}")
+                print(f"      时间: {created} | 消息数: {s['message_count']} | 首句: \"{preview}\"")
+        return
     
     # 初始化 LLM 客户端
     client = LLMClient(
         api_key=args.api_key,
         base_url=args.base_url,
         model=args.model,
+        reasoning_effort=args.effort,
     )
 
     # 初始化 Agent
     agent = MiniAgent(
         client=client,
         workspace_dir=args.dir,
+        session_id=args.session,
+        max_turns=args.max_turns,
     )
 
-    if args.prompt:
-        # 单次即时任务模式
-        asyncio.run(run_single_prompt(agent, args.prompt))
-    else:
-        # 启动交互式 REPL
-        asyncio.run(start_repl(agent))
+    try:
+        if args.prompt:
+            # 单次即时任务模式
+            asyncio.run(run_single_prompt(agent, args.prompt))
+        else:
+            # 启动交互式 REPL
+            asyncio.run(start_repl(agent))
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        pass
 
 
 if __name__ == "__main__":
