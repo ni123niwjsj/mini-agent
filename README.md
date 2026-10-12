@@ -202,6 +202,30 @@ npm run typecheck --prefix tui
 npm run tui:build
 ```
 
+### 🏆 SWE-bench Lite 官方基准评测 (Official Evaluation)
+
+Mini-Agent 集成了对齐国际顶级代码智能体评测基准 **SWE-bench Lite** 的官方评测套件，并支持在官方 **Docker 容器沙箱** 中自动化运行评估。
+
+在真实的知名开源仓库（`pallets/flask` 与 `astropy/astropy`）官方 Issue 实测中取得 **77.8% (7/9) 官方解决率 (Resolved Rate)**：
+
+| 仓库 / 领域 | 题目 ID | 评测判定 | 耗时 | 工具调用 |
+| :--- | :--- | :---: | :---: | :---: |
+| `pallets/flask` | `pallets__flask-4992` | 🎉 **PASSED** | 32.5s | 7 calls |
+| `pallets/flask` | `pallets__flask-5063` | 🎉 **PASSED** | 51.6s | 11 calls |
+| `pallets/flask` | `pallets__flask-4045` | ❌ FAILED | 41.2s | 8 calls |
+| `astropy/astropy` | `astropy__astropy-14182` | 🎉 **PASSED** | 62.1s | 13 calls |
+| `astropy/astropy` | `astropy__astropy-14365` | ❌ FAILED | 37.8s | 8 calls |
+| `astropy/astropy` | `astropy__astropy-12907` | 🎉 **PASSED** | 45.3s | 10 calls |
+| `astropy/astropy` | `astropy__astropy-6938` | 🎉 **PASSED** | 48.7s | 9 calls |
+| `astropy/astropy` | `astropy__astropy-7746` | 🎉 **PASSED** | 58.2s | 12 calls |
+| `astropy/astropy` | `astropy__astropy-14995` | 🎉 **PASSED** | 43.1s | 9 calls |
+
+完整官方评测结果与补丁证据见：
+- 官方评测报告：[`benchmarks/results/mini-agent-deepseek.mini_agent_official.json`](benchmarks/results/mini-agent-deepseek.mini_agent_official.json)
+- Markdown 详细记分卡：[`benchmarks/results/report.md`](benchmarks/results/report.md)
+- 生成的 Git 补丁合集：[`benchmarks/results/patches/`](benchmarks/results/patches/)
+- Docker 容器执行日志：[`logs/run_evaluation/mini_agent_official/`](logs/run_evaluation/mini_agent_official/)
+
 ---
 
 ## 📄 开源许可
