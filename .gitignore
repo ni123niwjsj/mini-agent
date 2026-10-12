@@ -43,3 +43,9 @@ Thumbs.db
 .sessions/
 workspace/
 *.log
+
+# Benchmark working trees & cloned repositories (heavy files >400MB)
+benchmarks/workspaces/
+benchmarks/fixtures/
+logs/run_evaluation/test_gold/
+

@@ -1,0 +1,13 @@
+{
+  "instance_id": "sqlparse__literal-preservation",
+  "repo_name": "sqlparse_repo",
+  "problem_statement": "Problem description:\nIn `sqlparse/formatter.py`, `format_sql(sql, keyword_case=\"upper\")` formats SQL keywords using word-boundary regexes, but mistakenly modifies keywords that appear inside quoted string literals (e.g. `'select'` or `'from'`).\n\nExample issue:\n`format_sql(\"select id from tbl where title = 'select'\", keyword_case=\"upper\")`\nCurrently produces:\n`SELECT id FROM tbl WHERE title = 'SELECT'` (the string literal 'select' is modified to uppercase, corrupting query values).\n\nRequirements:\nUpdate `format_sql` in `sqlparse/formatter.py` so that:\n- String literals enclosed in single quotes `'...'` or double quotes `\"...\"` are preserved strictly as-is.\n- Only SQL keywords outside of quotes are modified according to `keyword_case`.\n- Basic keyword formatting on unquoted tokens continues to work.",
+  "test_patch": "diff --git a/tests/test_sql.py b/tests/test_sql.py\nindex 59ae6cb..bfbcb69 100644\n--- a/tests/test_sql.py\n+++ b/tests/test_sql.py\n@@ -2,3 +2,8 @@ from sqlparse import format_sql\n \n def test_basic_format():\n     assert format_sql(\"select id from tbl\") == \"SELECT id FROM tbl\"\n+\n+def test_literal_preservation():\n+    sql = \"select id from tbl where title = 'select' or tag = 'from'\"\n+    res = format_sql(sql, keyword_case=\"upper\")\n+    assert res == \"SELECT id FROM tbl WHERE title = 'select' OR tag = 'from'\"\n",
+  "FAIL_TO_PASS": [
+    "tests/test_sql.py::test_literal_preservation"
+  ],
+  "PASS_TO_PASS": [
+    "tests/test_sql.py::test_basic_format"
+  ]
+}
+

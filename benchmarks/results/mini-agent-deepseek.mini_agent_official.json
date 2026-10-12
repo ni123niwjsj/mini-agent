@@ -1,0 +1,66 @@
+{
+    "total_instances": 9,
+    "submitted_instances": 9,
+    "completed_instances": 9,
+    "resolved_instances": 7,
+    "unresolved_instances": 2,
+    "infra_failure_instances": 0,
+    "ambiguous_failure_instances": 0,
+    "empty_patch_instances": 0,
+    "error_instances": 0,
+    "completed_ids": [
+        "astropy__astropy-12907",
+        "astropy__astropy-14182",
+        "astropy__astropy-14365",
+        "astropy__astropy-14995",
+        "astropy__astropy-6938",
+        "astropy__astropy-7746",
+        "pallets__flask-4045",
+        "pallets__flask-4992",
+        "pallets__flask-5063"
+    ],
+    "incomplete_ids": [],
+    "empty_patch_ids": [],
+    "submitted_ids": [
+        "astropy__astropy-12907",
+        "astropy__astropy-14182",
+        "astropy__astropy-14365",
+        "astropy__astropy-14995",
+        "astropy__astropy-6938",
+        "astropy__astropy-7746",
+        "pallets__flask-4045",
+        "pallets__flask-4992",
+        "pallets__flask-5063"
+    ],
+    "resolved_ids": [
+        "astropy__astropy-12907",
+        "astropy__astropy-14182",
+        "astropy__astropy-14995",
+        "astropy__astropy-6938",
+        "astropy__astropy-7746",
+        "pallets__flask-4992",
+        "pallets__flask-5063"
+    ],
+    "unresolved_ids": [
+        "astropy__astropy-14365",
+        "pallets__flask-4045"
+    ],
+    "infra_failure_ids": [],
+    "ambiguous_failure_ids": [],
+    "failure_reasons": {},
+    "error_ids": [],
+    "schema_version": 2,
+    "unstopped_instances": 0,
+    "unstopped_containers": [],
+    "unremoved_images": [
+        "swebench/sweb.eval.x86_64.astropy_1776_astropy-12907:latest",
+        "swebench/sweb.eval.x86_64.astropy_1776_astropy-14182:latest",
+        "swebench/sweb.eval.x86_64.astropy_1776_astropy-14365:latest",
+        "swebench/sweb.eval.x86_64.astropy_1776_astropy-14995:latest",
+        "swebench/sweb.eval.x86_64.astropy_1776_astropy-6938:latest",
+        "swebench/sweb.eval.x86_64.astropy_1776_astropy-7746:latest",
+        "swebench/sweb.eval.x86_64.pallets_1776_flask-4045:latest",
+        "swebench/sweb.eval.x86_64.pallets_1776_flask-4992:latest",
+        "swebench/sweb.eval.x86_64.pallets_1776_flask-5063:latest"
+    ]
+}

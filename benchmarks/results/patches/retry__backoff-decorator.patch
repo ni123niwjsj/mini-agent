@@ -1,0 +1,17 @@
+diff --git a/retry/decorator.py b/retry/decorator.py
+index 2cc3d04..b926acc 100644
+--- a/retry/decorator.py
++++ b/retry/decorator.py
+@@ -19,9 +19,10 @@ def retry(
+             for attempt in range(max_attempts):
+                 try:
+                     return func(*args, **kwargs)
+-                except Exception as e:
++                except exceptions as e:
+                     if attempt < max_attempts - 1:
+                         time.sleep(delay)
+-            return None
++                    else:
++                        raise
+         return wrapper
+     return decorator

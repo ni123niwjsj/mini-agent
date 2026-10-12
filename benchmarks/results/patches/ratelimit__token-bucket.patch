@@ -1,0 +1,21 @@
+diff --git a/ratelimit/bucket.py b/ratelimit/bucket.py
+index d2bafd9..947b87b 100644
+--- a/ratelimit/bucket.py
++++ b/ratelimit/bucket.py
+@@ -12,10 +12,13 @@ class TokenBucket:
+     def consume(self, tokens: float = 1.0) -> bool:
+         """消费指定数量的令牌。
+         
+-        Bug: 缺少基于时间差的令牌补充 (refill) 逻辑！
+-        未根据 (now - last_refill) * refill_rate 增加 tokens，
+-        导致初始容量耗尽后无法自动恢复。
++        根据距离上次补充的时间差自动补充令牌。
+         """
++        now = time.time()
++        elapsed = now - self.last_refill
++        self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)
++        self.last_refill = now
++
+         if self.tokens >= tokens:
+             self.tokens -= tokens
+             return True

@@ -1,0 +1,13 @@
+{
+  "instance_id": "flask__flask-4992",
+  "repo_name": "flask_repo",
+  "problem_statement": "Problem description:\n`Config.from_file` should accept an optional `mode` parameter.\n\nCurrently, `flask.Config.from_file` in `src/flask/config.py` opens files in text mode by default:\n```python\nwith open(filename) as f:\n    obj = load(f)\n```\nWhen using loaders that require binary reading (such as Python 3.11 `tomllib.load`), this causes a `TypeError` because the file is not opened in binary mode.\n\nExpected fix:\n1. Update `Config.from_file` signature in `src/flask/config.py` to accept `mode: str = \"t\"`:\n```python\ndef from_file(\n    self,\n    filename: str,\n    load: t.Callable[[t.Any], t.Mapping[str, t.Any]],\n    silent: bool = False,\n    mode: str = \"t\",\n) -> bool:\n```\n2. When opening the file, support the `mode` parameter (default \"t\").\nIf mode is \"b\", open the file in \"rb\" mode; if mode is \"t\", open in \"r\" mode (or `open(filename, f\"r{mode}\" if not mode.startswith(\"r\") else mode)`).\n3. Keep existing error handling and `silent` parameter behavior intact.",
+  "test_patch": "diff --git a/tests/test_config.py b/tests/test_config.py\nindex 01e0f3b..620e3cd 100644\n--- a/tests/test_config.py\n+++ b/tests/test_config.py\n@@ -10,3 +10,15 @@ def test_config_from_file_json(tmp_path):\n     assert c.from_file(str(cfg_file), json.load) is True\n     assert c[\"SECRET_KEY\"] == \"flask-test-secret\"\n     assert \"debug\" not in c\n+\n+def test_config_from_file_binary(tmp_path):\n+    def binary_loader(f):\n+        raw = f.read()\n+        assert isinstance(raw, bytes)\n+        return {\"MODE_TEST\": \"binary_ok\"}\n+\n+    cfg_file = tmp_path / \"config.bin\"\n+    cfg_file.write_bytes(b\"some binary data\")\n+    c = Config()\n+    assert c.from_file(str(cfg_file), binary_loader, mode=\"b\") is True\n+    assert c[\"MODE_TEST\"] == \"binary_ok\"\n",
+  "FAIL_TO_PASS": [
+    "tests/test_config.py::test_config_from_file_binary"
+  ],
+  "PASS_TO_PASS": [
+    "tests/test_config.py::test_config_from_file_json"
+  ]
+}
+

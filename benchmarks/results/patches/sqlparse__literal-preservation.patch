@@ -1,0 +1,51 @@
+diff --git a/sqlparse/formatter.py b/sqlparse/formatter.py
+index c4ee81a..ac76688 100644
+--- a/sqlparse/formatter.py
++++ b/sqlparse/formatter.py
+@@ -6,13 +6,39 @@ KEYWORDS = {
+     "UPDATE", "SET", "DELETE",
+ }
+ 
++# 匹配单引号或双引号字符串字面量，支持：
++#   - SQL 标准转义: '' 或 ""（引号重复）
++#   - 反斜杠转义: \' 或 \"
++_STRING_LITERAL_RE = re.compile(
++    r"'(?:[^'\\]|\\.|'')*'"
++    r"|\"(?:[^\"\\]|\\.|\"\")*\"",
++    flags=re.DOTALL,
++)
++
++
++def _replace_keywords(segment: str, keyword_case: str) -> str:
++    """在非引号片段内替换 SQL 关键字，返回替换后的文本。"""
++    case = "upper" if keyword_case == "upper" else "lower"
++    for kw in KEYWORDS:
++        replacement = kw.upper() if case == "upper" else kw.lower()
++        segment = re.sub(rf"\b{kw}\b", replacement, segment, flags=re.IGNORECASE)
++    return segment
++
++
+ def format_sql(sql: str, keyword_case: str = "upper") -> str:
+     """格式化 SQL 关键词大小写。
+-    
+-    Bug: 使用全局单词正则替换会导致单引号内的字符串字面量 (如 'select') 内部的文本也被误替换为大写。
+-    在字符串单引号或双引号内部的内容必须严格保持原样，不应被视为关键字。
++
++    只有引号外的 SQL 关键字会被修改；单引号 ('...') 与双引号 ("...")
++    字符串字面量的内容严格保持原样。
+     """
+-    for kw in KEYWORDS:
+-        replacement = kw.upper() if keyword_case == "upper" else kw.lower()
+-        sql = re.sub(rf"\b{kw}\b", replacement, sql, flags=re.IGNORECASE)
+-    return sql
++    parts = []
++    pos = 0
++    for match in _STRING_LITERAL_RE.finditer(sql):
++        # 引号之前的部分：属于 SQL 代码，可以替换关键字
++        parts.append(_replace_keywords(sql[pos:match.start()], keyword_case))
++        # 字符串字面量本身：严格保持原样
++        parts.append(match.group(0))
++        pos = match.end()
++    # 剩余未闭合部分（无引号）：作为代码处理
++    parts.append(_replace_keywords(sql[pos:], keyword_case))
++    return "".join(parts)

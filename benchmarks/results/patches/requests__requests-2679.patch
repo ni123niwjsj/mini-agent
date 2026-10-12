@@ -1,0 +1,19 @@
+diff --git a/requests/adapters.py b/requests/adapters.py
+index 0f2ddd8..4b23b77 100644
+--- a/requests/adapters.py
++++ b/requests/adapters.py
+@@ -13,7 +13,10 @@ class HTTPAdapter:
+         Bug: 当使用 proxies 且底层抛出 ProtocolError 时，
+         未正确捕获并转换为标准的 ProxyError，导致上层无法捕获特定异常。
+         """
+-        if proxies:
+-            # 模拟底层代理连接报错
+-            raise ProtocolError("Cannot connect to proxy socket")
+-        return "OK"
++        try:
++            if proxies:
++                # 模拟底层代理连接报错
++                raise ProtocolError("Cannot connect to proxy socket")
++            return "OK"
++        except ProtocolError as e:
++            raise ProxyError(e)

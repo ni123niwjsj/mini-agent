@@ -1,0 +1,22 @@
+{
+  "instance_id": "requests__requests-2679",
+  "status": "SUCCESS",
+  "duration_seconds": 17.709101915359497,
+  "turns": 5,
+  "tool_calls": [
+    "bash",
+    "read_file",
+    "bash",
+    "edit_file",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/requests__requests-2679.patch",
+  "patch_content": "diff --git a/requests/__pycache__/__init__.cpython-314.pyc b/requests/__pycache__/__init__.cpython-314.pyc\nindex fc08e5b..4f8d7ae 100644\nBinary files a/requests/__pycache__/__init__.cpython-314.pyc and b/requests/__pycache__/__init__.cpython-314.pyc differ\ndiff --git a/requests/__pycache__/adapters.cpython-314.pyc b/requests/__pycache__/adapters.cpython-314.pyc\nindex 42c1a49..ae80cb0 100644\nBinary files a/requests/__pycache__/adapters.cpython-314.pyc and b/requests/__pycache__/adapters.cpython-314.pyc differ\ndiff --git a/requests/__pycache__/exceptions.cpython-314.pyc b/requests/__pycache__/exceptions.cpython-314.pyc\nindex ef8b5b1..5707b05 100644\nBinary files a/requests/__pycache__/exceptions.cpython-314.pyc and b/requests/__pycache__/exceptions.cpython-314.pyc differ\ndiff --git a/requests/adapters.py b/requests/adapters.py\nindex 0f2ddd8..4b23b77 100644\n--- a/requests/adapters.py\n+++ b/requests/adapters.py\n@@ -13,7 +13,10 @@ class HTTPAdapter:\n         Bug: 当使用 proxies 且底层抛出 ProtocolError 时，\n         未正确捕获并转换为标准的 ProxyError，导致上层无法捕获特定异常。\n         \"\"\"\n-        if proxies:\n-            # 模拟底层代理连接报错\n-            raise ProtocolError(\"Cannot connect to proxy socket\")\n-        return \"OK\"\n+        try:\n+            if proxies:\n+                # 模拟底层代理连接报错\n+                raise ProtocolError(\"Cannot connect to proxy socket\")\n+            return \"OK\"\n+        except ProtocolError as e:\n+            raise ProxyError(e)\ndiff --git a/tests/__pycache__/test_requests.cpython-314.pyc b/tests/__pycache__/test_requests.cpython-314.pyc\nindex c5dcf3a..20a12a1 100644\nBinary files a/tests/__pycache__/test_requests.cpython-314.pyc and b/tests/__pycache__/test_requests.cpython-314.pyc differ\n",
+  "error_message": null,
+  "agent_summary": "Fix applied and verified.\n\n**Change in `requests/adapters.py` (`HTTPAdapter.send`):**\n- Wrapped the proxy handling in a `try/except ProtocolError` block.\n- On `ProtocolError`, re-raise as `ProxyError(e)` so protocol errors from proxy connections no longer leak to callers.\n- `ProxyError` was already imported from `.exceptions`.\n\n**Verification:**\n- Direct calls (no proxies) still return `\"OK\"`.\n- Calls with proxies now raise `ProxyError` instead of `ProtocolError`.\n- Existing test suite passes.\n\nNo tests were modified or git changes committed."
+}

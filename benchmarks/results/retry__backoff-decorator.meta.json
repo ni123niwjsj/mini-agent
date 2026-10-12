@@ -1,0 +1,28 @@
+{
+  "instance_id": "retry__backoff-decorator",
+  "status": "SUCCESS",
+  "duration_seconds": 37.79722619056702,
+  "turns": 9,
+  "tool_calls": [
+    "read_file",
+    "glob",
+    "read_file",
+    "read_file",
+    "edit_file",
+    "edit_file",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/retry__backoff-decorator.patch",
+  "patch_content": "diff --git a/retry/decorator.py b/retry/decorator.py\nindex 2cc3d04..b926acc 100644\n--- a/retry/decorator.py\n+++ b/retry/decorator.py\n@@ -19,9 +19,10 @@ def retry(\n             for attempt in range(max_attempts):\n                 try:\n                     return func(*args, **kwargs)\n-                except Exception as e:\n+                except exceptions as e:\n                     if attempt < max_attempts - 1:\n                         time.sleep(delay)\n-            return None\n+                    else:\n+                        raise\n         return wrapper\n     return decorator\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete.\n\n## Summary\n\nIn `retry/decorator.py`, the `wrapper` had two bugs. The corrected logic is:\n\n```python\ndef wrapper(*args, **kwargs):\n    for attempt in range(max_attempts):\n        try:\n            return func(*args, **kwargs)\n        except exceptions as e:\n            if attempt < max_attempts - 1:\n                time.sleep(delay)\n            else:\n                raise\n    return wrapper\n```\n\n**Changes:**\n\n1. **Filtered exception catching** — Changed `except Exception as e:` to `except exceptions as e:`. Now only exception types listed in the `exceptions` tuple trigger a retry; any unexpected exception type propagates immediately (it isn't caught by the `except` clause at all).\n\n2. **Re-raise on exhaustion** — Removed the trailing `return None` and added an `else: raise`. When the final attempt fails, the last caught exception is re-raised instead of silently returning `None`.\n\n**Verification:**\n- `tests/test_retry.py::test_successful_call` passes.\n- Manual check confirms: a matching exception (`ValueError`) is retried the full 3 attempts then re-raised; an unmatched exception (`KeyError`) is raised immediately without being swallowed."
+}

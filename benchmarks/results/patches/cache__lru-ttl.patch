@@ -1,0 +1,40 @@
+diff --git a/cache/lru.py b/cache/lru.py
+index 2be702f..fd8d507 100644
+--- a/cache/lru.py
++++ b/cache/lru.py
+@@ -7,23 +7,26 @@ class LRUCache:
+ 
+     def __init__(self, capacity: int = 100):
+         self.capacity = capacity
+-        self._cache: OrderedDict[str, Any] = OrderedDict()
++        # key -> (value, expire_time)；expire_time 为 None 表示永不过期
++        self._cache: OrderedDict[str, tuple] = OrderedDict()
+ 
+     def get(self, key: str, default: Any = None) -> Any:
+         if key not in self._cache:
+             return default
+-        # 激活命中节点移动到末尾
++        value, expire_time = self._cache[key]
++        # 已过期：删除并返回默认值
++        if expire_time is not None and time.time() >= expire_time:
++            del self._cache[key]
++            return default
++        # 激活命中节点移动到末尾（MRU）
+         self._cache.move_to_end(key)
+-        return self._cache[key]
++        return value
+ 
+     def set(self, key: str, value: Any, ttl: Optional[float] = None) -> None:
+-        """存储缓存。
+-        
+-        Bug: 缺少对 ttl 参数的支持与过期淘汰逻辑！
+-        即使传入了 ttl，缓存也永久有效。
+-        """
++        """存储缓存，可选设置 TTL（秒），到期后自动失效。"""
++        expire_time = time.time() + ttl if ttl is not None else None
+         if key in self._cache:
+             self._cache.move_to_end(key)
+-        self._cache[key] = value
++        self._cache[key] = (value, expire_time)
+         if len(self._cache) > self.capacity:
+             self._cache.popitem(last=False)

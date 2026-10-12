@@ -1,0 +1,13 @@
+{
+  "instance_id": "requests__requests-2679",
+  "repo_name": "requests_repo",
+  "problem_statement": "Problem description:\nIn `requests/adapters.py`, when proxies are configured and a connection attempt raises `ProtocolError`, it should be caught and re-raised as `requests.exceptions.ProxyError` instead of letting `ProtocolError` leak directly to callers.\n\nExpected fix:\nIn `requests/adapters.py`, update `HTTPAdapter.send`: when `ProtocolError` is raised while handling proxies, catch it and raise `ProxyError(e)` (or `ProxyError(str(e))`):\n```python\ntry:\n    if proxies:\n        raise ProtocolError(\"Cannot connect to proxy socket\")\n    return \"OK\"\nexcept ProtocolError as e:\n    raise ProxyError(e)\n```\nEnsure `ProxyError` is imported from `.exceptions`.",
+  "test_patch": "diff --git a/tests/test_requests.py b/tests/test_requests.py\nindex a39a58f..e48f8a7 100644\n--- a/tests/test_requests.py\n+++ b/tests/test_requests.py\n@@ -1,6 +1,11 @@\n import pytest\n-from requests import HTTPAdapter\n+from requests import HTTPAdapter, ProxyError\n \n def test_direct_send():\n     adapter = HTTPAdapter()\n     assert adapter.send(\"http://example.com\") == \"OK\"\n+\n+def test_proxy_protocol_error_wrapped():\n+    adapter = HTTPAdapter()\n+    with pytest.raises(ProxyError):\n+        adapter.send(\"http://example.com\", proxies={\"http\": \"http://127.0.0.1:8080\"})\n",
+  "FAIL_TO_PASS": [
+    "tests/test_requests.py::test_proxy_protocol_error_wrapped"
+  ],
+  "PASS_TO_PASS": [
+    "tests/test_requests.py::test_direct_send"
+  ]
+}
+

@@ -1,0 +1,201 @@
+# 🏆 Mini-Agent SWE-bench 基准评测报告
+
+- **评测时间**: 2026-10-12 21:37:19
+- **评估模型**: `deepseek/deepseek-v4.1-flash`
+- **总测试题目**: 1
+- **成功解决 (Resolved)**: 0 / 1 (0.0%)
+- **平均轮数**: 25.0 轮
+- **平均耗时**: 193.22s
+
+## 📊 评测明细总表
+
+| 题目编号 (Instance ID) | 修复状态 | 评测结论 | 轮数 | 耗时 | 工具调用 | 补丁大小 |
+| :--- | :---: | :---: | :---: | :---: | :--- | :---: |
+| `astropy__astropy-14995` | ❌ | 🔴 **FAIL** | 25 | 193.2s | `glob, read_file, web_search, bash, web_fetch, grep, edit_file` | 13 行 |
+
+## 🔍 用例测试细节
+
+### `astropy__astropy-14995`
+- **解决状态**: 未解决
+- **FAIL_TO_PASS 校验**:
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_nddata_bitmask_arithmetic`: FAILED
+- **PASS_TO_PASS 校验**:
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data[data10-data20]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data[data11-data21]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data[data12-data22]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data[data13-data23]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data[data14-data24]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data[data15-data25]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data[data16-data26]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_invalid`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_identical[data10-data20]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_identical[data11-data21]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_identical[data12-data22]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_identical[data13-data23]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_identical[data14-data24]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_identical[data15-data25]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_identical[data16-data26]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_identical[data17-data27]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_not_identical[data10-data20]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_not_identical[data11-data21]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_not_identical[data12-data22]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_unit_not_identical[data13-data23]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_wcs[None-None]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_wcs[None-wcs21]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_wcs[wcs12-None]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_wcs[wcs13-wcs23]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_wcs[wcs14-wcs24]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[None-None]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[None-False]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[True-None]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[False-False]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[True-False]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[False-True]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[True-True]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[mask17-mask27]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[mask18-mask28]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[mask19-mask29]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[mask110-mask210]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[mask111-mask211]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks[mask112-mask212]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_data_masks_invalid`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-1-uncert10-data20]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-0.5-uncert11-data21]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-0.25-uncert12-data22]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0-uncert13-data23]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0.25-uncert14-data24]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0.5-uncert15-data25]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[1-uncert16-data26]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-1-uncert17-data27]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-0.5-uncert18-data28]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-0.25-uncert19-data29]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0-uncert110-data210]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0.25-uncert111-data211]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0.5-uncert112-data212]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[1-uncert113-data213]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-1-uncert114-data214]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-0.5-uncert115-data215]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-0.25-uncert116-data216]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0-uncert117-data217]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0.25-uncert118-data218]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0.5-uncert119-data219]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[1-uncert120-data220]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-1-uncert121-data221]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-0.5-uncert122-data222]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[-0.25-uncert123-data223]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0-uncert124-data224]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0.25-uncert125-data225]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[0.5-uncert126-data226]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation[1-uncert127-data227]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-1-uncert10-data20]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-0.5-uncert11-data21]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-0.25-uncert12-data22]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0-uncert13-data23]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0.25-uncert14-data24]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0.5-uncert15-data25]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[1-uncert16-data26]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-1-uncert17-data27]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-0.5-uncert18-data28]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-0.25-uncert19-data29]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0-uncert110-data210]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0.25-uncert111-data211]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0.5-uncert112-data212]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[1-uncert113-data213]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-1-uncert114-data214]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-0.5-uncert115-data215]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-0.25-uncert116-data216]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0-uncert117-data217]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0.25-uncert118-data218]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0.5-uncert119-data219]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[1-uncert120-data220]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-1-uncert121-data221]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-0.5-uncert122-data222]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[-0.25-uncert123-data223]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0-uncert124-data224]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0.25-uncert125-data225]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[0.5-uncert126-data226]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_basic_with_correlation[1-uncert127-data227]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-1-uncert10-data20]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-0.5-uncert11-data21]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-0.25-uncert12-data22]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0-uncert13-data23]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0.25-uncert14-data24]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0.5-uncert15-data25]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[1-uncert16-data26]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-1-uncert17-data27]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-0.5-uncert18-data28]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-0.25-uncert19-data29]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0-uncert110-data210]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0.25-uncert111-data211]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0.5-uncert112-data212]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[1-uncert113-data213]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-1-uncert114-data214]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-0.5-uncert115-data215]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-0.25-uncert116-data216]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0-uncert117-data217]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0.25-uncert118-data218]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0.5-uncert119-data219]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[1-uncert120-data220]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-1-uncert121-data221]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-0.5-uncert122-data222]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[-0.25-uncert123-data223]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0-uncert124-data224]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0.25-uncert125-data225]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[0.5-uncert126-data226]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_basic_with_correlation[1-uncert127-data227]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_basic_with_correlation_array`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_with_correlation_unsupported`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_one_missing`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[uncert10-None]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[uncert11-None]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[None-uncert22]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[None-uncert23]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[uncert14-uncert24]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[uncert15-uncert25]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[uncert16-uncert26]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[uncert17-uncert27]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[uncert18-uncert28]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[uncert19-uncert29]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[uncert110-uncert210]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_stddevuncertainty_with_units[uncert111-uncert211]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[uncert10-None]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[uncert11-None]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[None-uncert22]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[None-uncert23]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[uncert14-uncert24]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[uncert15-uncert25]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[uncert16-uncert26]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[uncert17-uncert27]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[uncert18-uncert28]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[uncert19-uncert29]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[uncert110-uncert210]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_varianceuncertainty_with_units[uncert111-uncert211]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[uncert10-None]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[uncert11-None]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[None-uncert22]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[None-uncert23]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[uncert14-uncert24]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[uncert15-uncert25]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[uncert16-uncert26]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[uncert17-uncert27]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[uncert18-uncert28]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[uncert19-uncert29]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[uncert110-uncert210]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_inversevarianceuncertainty_with_units[uncert111-uncert211]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_handle_switches[ff]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_handle_switches[first_found]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_meta_func`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_wcs_func`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_mask_func`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_two_argument_useage[add]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_two_argument_useage[subtract]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_two_argument_useage[divide]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_two_argument_useage[multiply]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_two_argument_useage_non_nddata_first_arg[add]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_two_argument_useage_non_nddata_first_arg[subtract]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_two_argument_useage_non_nddata_first_arg[divide]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_two_argument_useage_non_nddata_first_arg[multiply]`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_arithmetics_unknown_uncertainties`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_psf_warning`: FAILED
+  - ❌ `astropy/nddata/mixins/tests/test_ndarithmetic.py::test_raise_method_not_supported`: FAILED

@@ -1,0 +1,26 @@
+{
+  "instance_id": "sqlparse__literal-preservation",
+  "status": "SUCCESS",
+  "duration_seconds": 35.98895621299744,
+  "turns": 8,
+  "tool_calls": [
+    "read_file",
+    "bash",
+    "bash",
+    "glob",
+    "read_file",
+    "write_file",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sqlparse__literal-preservation.patch",
+  "patch_content": "diff --git a/sqlparse/formatter.py b/sqlparse/formatter.py\nindex c4ee81a..ac76688 100644\n--- a/sqlparse/formatter.py\n+++ b/sqlparse/formatter.py\n@@ -6,13 +6,39 @@ KEYWORDS = {\n     \"UPDATE\", \"SET\", \"DELETE\",\n }\n \n+# 匹配单引号或双引号字符串字面量，支持：\n+#   - SQL 标准转义: '' 或 \"\"（引号重复）\n+#   - 反斜杠转义: \\' 或 \\\"\n+_STRING_LITERAL_RE = re.compile(\n+    r\"'(?:[^'\\\\]|\\\\.|'')*'\"\n+    r\"|\\\"(?:[^\\\"\\\\]|\\\\.|\\\"\\\")*\\\"\",\n+    flags=re.DOTALL,\n+)\n+\n+\n+def _replace_keywords(segment: str, keyword_case: str) -> str:\n+    \"\"\"在非引号片段内替换 SQL 关键字，返回替换后的文本。\"\"\"\n+    case = \"upper\" if keyword_case == \"upper\" else \"lower\"\n+    for kw in KEYWORDS:\n+        replacement = kw.upper() if case == \"upper\" else kw.lower()\n+        segment = re.sub(rf\"\\b{kw}\\b\", replacement, segment, flags=re.IGNORECASE)\n+    return segment\n+\n+\n def format_sql(sql: str, keyword_case: str = \"upper\") -> str:\n     \"\"\"格式化 SQL 关键词大小写。\n-    \n-    Bug: 使用全局单词正则替换会导致单引号内的字符串字面量 (如 'select') 内部的文本也被误替换为大写。\n-    在字符串单引号或双引号内部的内容必须严格保持原样，不应被视为关键字。\n+\n+    只有引号外的 SQL 关键字会被修改；单引号 ('...') 与双引号 (\"...\")\n+    字符串字面量的内容严格保持原样。\n     \"\"\"\n-    for kw in KEYWORDS:\n-        replacement = kw.upper() if keyword_case == \"upper\" else kw.lower()\n-        sql = re.sub(rf\"\\b{kw}\\b\", replacement, sql, flags=re.IGNORECASE)\n-    return sql\n+    parts = []\n+    pos = 0\n+    for match in _STRING_LITERAL_RE.finditer(sql):\n+        # 引号之前的部分：属于 SQL 代码，可以替换关键字\n+        parts.append(_replace_keywords(sql[pos:match.start()], keyword_case))\n+        # 字符串字面量本身：严格保持原样\n+        parts.append(match.group(0))\n+        pos = match.end()\n+    # 剩余未闭合部分（无引号）：作为代码处理\n+    parts.append(_replace_keywords(sql[pos:], keyword_case))\n+    return \"\".join(parts)\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\n**Problem:** `format_sql` applied word-boundary regex replacements globally over the whole SQL string, so keywords appearing inside quoted string literals (e.g. `'select'`) were also rewritten.\n\n**Fix** (`sqlparse/formatter.py`):\n\n1. **Added a string-literal scanner** (`_STRING_LITERAL_RE`) that matches single-quoted `'...'` and double-quoted `\"...\"` literals, correctly handling SQL-standard doubled-quote escapes (`''`, `\"\"`) and backslash escapes (`\\'`, `\\\"`).\n\n2. **Split the input into code vs. literal segments**: `format_sql` walks through matches, applying keyword replacement only to the unquoted segments before/between/after literals, while appending each matched literal verbatim.\n\n3. **Extracted `_replace_keywords`** to keep the original per-keyword regex replacement logic, now applied only to unquoted code segments.\n\n**Verification:**\n- Existing test `test_basic_format` passes (`select id from tbl` → `SELECT id FROM tbl`).\n- `'select'` / `\"from\"` literals preserved as-is while surrounding keywords are cased correctly.\n- Doubled-quote escapes (`'it''s from here'`) remain untouched.\n- `keyword_case=\"lower\"` still works; only `sqlparse/formatter.py` changed (no tests modified)."
+}

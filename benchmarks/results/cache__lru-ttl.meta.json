@@ -1,0 +1,25 @@
+{
+  "instance_id": "cache__lru-ttl",
+  "status": "SUCCESS",
+  "duration_seconds": 28.882994413375854,
+  "turns": 7,
+  "tool_calls": [
+    "read_file",
+    "glob",
+    "read_file",
+    "read_file",
+    "write_file",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/cache__lru-ttl.patch",
+  "patch_content": "diff --git a/cache/__pycache__/__init__.cpython-314.pyc b/cache/__pycache__/__init__.cpython-314.pyc\nindex 7cf722e..c286562 100644\nBinary files a/cache/__pycache__/__init__.cpython-314.pyc and b/cache/__pycache__/__init__.cpython-314.pyc differ\ndiff --git a/cache/__pycache__/lru.cpython-314.pyc b/cache/__pycache__/lru.cpython-314.pyc\nindex e5c39ee..28bad73 100644\nBinary files a/cache/__pycache__/lru.cpython-314.pyc and b/cache/__pycache__/lru.cpython-314.pyc differ\ndiff --git a/cache/lru.py b/cache/lru.py\nindex 2be702f..fd8d507 100644\n--- a/cache/lru.py\n+++ b/cache/lru.py\n@@ -7,23 +7,26 @@ class LRUCache:\n \n     def __init__(self, capacity: int = 100):\n         self.capacity = capacity\n-        self._cache: OrderedDict[str, Any] = OrderedDict()\n+        # key -> (value, expire_time)；expire_time 为 None 表示永不过期\n+        self._cache: OrderedDict[str, tuple] = OrderedDict()\n \n     def get(self, key: str, default: Any = None) -> Any:\n         if key not in self._cache:\n             return default\n-        # 激活命中节点移动到末尾\n+        value, expire_time = self._cache[key]\n+        # 已过期：删除并返回默认值\n+        if expire_time is not None and time.time() >= expire_time:\n+            del self._cache[key]\n+            return default\n+        # 激活命中节点移动到末尾（MRU）\n         self._cache.move_to_end(key)\n-        return self._cache[key]\n+        return value\n \n     def set(self, key: str, value: Any, ttl: Optional[float] = None) -> None:\n-        \"\"\"存储缓存。\n-        \n-        Bug: 缺少对 ttl 参数的支持与过期淘汰逻辑！\n-        即使传入了 ttl，缓存也永久有效。\n-        \"\"\"\n+        \"\"\"存储缓存，可选设置 TTL（秒），到期后自动失效。\"\"\"\n+        expire_time = time.time() + ttl if ttl is not None else None\n         if key in self._cache:\n             self._cache.move_to_end(key)\n-        self._cache[key] = value\n+        self._cache[key] = (value, expire_time)\n         if len(self._cache) > self.capacity:\n             self._cache.popitem(last=False)\ndiff --git a/tests/__pycache__/test_cache.cpython-314.pyc b/tests/__pycache__/test_cache.cpython-314.pyc\nindex 383d69d..5901efd 100644\nBinary files a/tests/__pycache__/test_cache.cpython-314.pyc and b/tests/__pycache__/test_cache.cpython-314.pyc differ\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\nFixed `LRUCache` in `cache/lru.py` to support TTL key expiration.\n\n**Changes:**\n\n1. **Storage format** — `self._cache` now stores `(value, expire_time)` tuples instead of bare values. `expire_time` is `None` for non-expiring keys.\n\n2. **`set(key, value, ttl=None)`** — computes `expire_time = time.time() + ttl` when `ttl is not None`, otherwise stores `None` (never expires). Existing MRU re-ordering and capacity eviction (`popitem(last=False)`) logic preserved.\n\n3. **`get(key, default=None)`** — unpacks the tuple, and if the key is expired (`time.time() >= expire_time`) deletes it from the cache and returns `default`; otherwise moves it to end (MRU) and returns its value.\n\n**Verification:**\n- Existing `tests/test_cache.py::test_lru_eviction` passes.\n- Manual checks confirmed: unexpired TTL keys return values, expired keys return `default` (custom default honored), get updates recency, and expired keys are removed from `_cache`.\n\nTests and git state left untouched (no commits)."
+}

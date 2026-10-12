@@ -1,0 +1,13 @@
+{
+  "instance_id": "cache__lru-ttl",
+  "repo_name": "cache_repo",
+  "problem_statement": "Problem description:\n`LRUCache` in `cache/lru.py` needs to support Time-To-Live (TTL) key expiration.\n\nRequirements:\n1. Update `LRUCache.set(self, key: str, value: Any, ttl: Optional[float] = None) -> None`:\n   - When `ttl` is provided (e.g. `ttl is not None`), record an expiration timestamp `time.time() + ttl` for the key.\n   - If `ttl` is None, the key never expires.\n2. Update `LRUCache.get(self, key: str, default: Any = None) -> Any`:\n   - If `key` is present but expired (`time.time() >= expire_time`), delete it from cache and return `default`.\n   - If `key` is not expired, move it to end (MRU) and return its value.\n3. Keep existing capacity eviction logic intact.",
+  "test_patch": "diff --git a/tests/test_cache.py b/tests/test_cache.py\nindex 94fc3b4..b960d60 100644\n--- a/tests/test_cache.py\n+++ b/tests/test_cache.py\n@@ -1,3 +1,4 @@\n+import time\n from cache import LRUCache\n \n def test_lru_eviction():\n@@ -8,3 +9,10 @@ def test_lru_eviction():\n     c.set(\"c\", 3)\n     assert c.get(\"b\") is None\n     assert c.get(\"c\") == 3\n+\n+def test_ttl_expiration():\n+    c = LRUCache(capacity=5)\n+    c.set(\"temp\", \"val\", ttl=0.05)\n+    assert c.get(\"temp\") == \"val\"\n+    time.sleep(0.06)\n+    assert c.get(\"temp\") is None\n",
+  "FAIL_TO_PASS": [
+    "tests/test_cache.py::test_ttl_expiration"
+  ],
+  "PASS_TO_PASS": [
+    "tests/test_cache.py::test_lru_eviction"
+  ]
+}
+

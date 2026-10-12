@@ -1,0 +1,13 @@
+{
+  "instance_id": "ratelimit__token-bucket",
+  "repo_name": "ratelimit_repo",
+  "problem_statement": "Problem description:\nIn `ratelimit/bucket.py`, `TokenBucket` does not implement token refill based on elapsed time.\n\nRequirements:\n1. Update `TokenBucket.consume(tokens: float = 1.0) -> bool` to calculate the elapsed time since `last_refill`:\n   - `elapsed = now - self.last_refill`\n   - Add `elapsed * self.refill_rate` to `self.tokens`, capped at `self.capacity`.\n   - Update `self.last_refill = now`.\n2. If `self.tokens >= tokens`, deduct `tokens` and return `True`, otherwise return `False`.",
+  "test_patch": "diff --git a/tests/test_bucket.py b/tests/test_bucket.py\nindex 83436cf..860a7d4 100644\n--- a/tests/test_bucket.py\n+++ b/tests/test_bucket.py\n@@ -1,3 +1,4 @@\n+import time\n from ratelimit import TokenBucket\n \n def test_initial_consume():\n@@ -5,3 +6,10 @@ def test_initial_consume():\n     assert b.consume(1) is True\n     assert b.consume(1) is True\n     assert b.consume(1) is False\n+\n+def test_refill_tokens():\n+    b = TokenBucket(capacity=2, refill_rate=10)\n+    assert b.consume(2) is True\n+    assert b.consume(1) is False\n+    time.sleep(0.15)\n+    assert b.consume(1) is True\n",
+  "FAIL_TO_PASS": [
+    "tests/test_bucket.py::test_refill_tokens"
+  ],
+  "PASS_TO_PASS": [
+    "tests/test_bucket.py::test_initial_consume"
+  ]
+}
+

@@ -1,0 +1,36 @@
+{
+  "instance_id": "pallets__flask-4045",
+  "status": "SUCCESS",
+  "duration_seconds": 73.85801219940186,
+  "turns": 15,
+  "tool_calls": [
+    "grep",
+    "grep",
+    "read_file",
+    "grep",
+    "read_file",
+    "grep",
+    "read_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "edit_file",
+    "bash",
+    "edit_file",
+    "bash",
+    "grep"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/pallets__flask-4045.patch",
+  "patch_content": "diff --git a/CHANGES.rst b/CHANGES.rst\nindex d546dcab..0d2f39db 100644\n--- a/CHANGES.rst\n+++ b/CHANGES.rst\n@@ -15,6 +15,9 @@ Unreleased\n -   Fix some types that weren't available in Python 3.6.0. :issue:`4040`\n -   Improve typing for ``send_file``, ``send_from_directory``, and\n     ``get_send_file_max_age``. :issue:`4044`, :pr:`4026`\n+-   Raise an error when a blueprint name contains a dot. The ``.`` is\n+    used to separate the blueprint name from the endpoint name.\n+    :issue:`4045`\n \n \n Version 2.0.0\ndiff --git a/src/flask/blueprints.py b/src/flask/blueprints.py\nindex 5fb84d86..3758f0d3 100644\n--- a/src/flask/blueprints.py\n+++ b/src/flask/blueprints.py\n@@ -181,6 +181,9 @@ class Blueprint(Scaffold):\n         root_path: t.Optional[str] = None,\n         cli_group: t.Optional[str] = _sentinel,  # type: ignore\n     ):\n+        if \".\" in name:\n+            raise ValueError(\"'name' may not contain a dot '.' character.\")\n+\n         super().__init__(\n             import_name=import_name,\n             static_folder=static_folder,\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete. The test failures seen earlier are a pre-existing environment issue (Python 3.14 removed `pkgutil.get_loader`, and fixtures aren't resolving in this sandbox), unrelated to my change.\n\n## Summary\n\nThe issue requested raising an error when a blueprint name contains a dot, since dots are significant for nested blueprints (each dot separates the blueprint name from the endpoint name).\n\n**Change made** in `src/flask/blueprints.py` — added validation in `Blueprint.__init__`:\n\n```python\nif \".\" in name:\n    raise ValueError(\"'name' may not contain a dot '.' character.\")\n```\n\nThis mirrors the existing protection for endpoint names (`assert \".\" not in endpoint`) added in 1.0, but now for blueprint names. The check is placed at the very start of `__init__` so the error is raised early.\n\nI also added a corresponding entry to `CHANGES.rst` documenting the new behavior under the unreleased 2.0.1 section.\n\nI verified the dot check triggers correctly via a direct import test (`flask.Blueprint('a.b', __name__)` raises `ValueError: 'name' may not contain a dot '.' character.`). No test files were modified."
+}
