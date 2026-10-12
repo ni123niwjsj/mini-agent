@@ -60,6 +60,29 @@ class LLMClient:
         target = model_name or self.model
         return resolve_context_window(target, self._model_specs_cache)
 
+    def clone(
+        self,
+        model: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        reasoning_effort: Optional[str] = None,
+        max_retries: Optional[int] = None,
+        retry_delay: Optional[float] = None,
+    ) -> "LLMClient":
+        """基于当前配置克隆出一个新的 LLMClient 实例（用于子代理切换特定模型）。"""
+        new_client = LLMClient(
+            api_key=api_key or self.api_key,
+            base_url=base_url or self.base_url,
+            model=model or self.model,
+            reasoning_effort=self.reasoning_effort if reasoning_effort is None else reasoning_effort,
+            max_retries=self.max_retries if max_retries is None else max_retries,
+            retry_delay=self.retry_delay if retry_delay is None else retry_delay,
+        )
+        # 共享已知 specs 缓存以减少重复网络请求
+        new_client._model_specs_cache = dict(self._model_specs_cache)
+        new_client._specs_list = list(self._specs_list)
+        return new_client
+
     async def get_model_catalog(self, force_refresh: bool = False) -> List[ModelSpec]:
         """动态从 Provider 服务端获取包含上下文规格的模型列表 (GET /v1/models)"""
         if self._specs_list and not force_refresh:

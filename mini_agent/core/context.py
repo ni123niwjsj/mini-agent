@@ -226,6 +226,19 @@ class AgentContext:
         self.cumulative_usage["total_tokens"] += usage.total_tokens
         self.cumulative_usage["cached_tokens"] += usage.cached_tokens
 
+    def merge_subagent_usage(self, usage_dict: Dict[str, Any]) -> None:
+        """合并累加子代理执行所消耗的 Token 用量至当前上下文的全局累计账本中"""
+        if not usage_dict or not isinstance(usage_dict, dict):
+            return
+        p = usage_dict.get("prompt_tokens", 0) or 0
+        c = usage_dict.get("completion_tokens", 0) or 0
+        t = usage_dict.get("total_tokens", 0) or (p + c)
+        cached = usage_dict.get("cached_tokens", 0) or 0
+        self.cumulative_usage["prompt_tokens"] += p
+        self.cumulative_usage["completion_tokens"] += c
+        self.cumulative_usage["total_tokens"] += t
+        self.cumulative_usage["cached_tokens"] += cached
+
     def should_auto_compact(self) -> bool:
         """检查当前上下文是否超过自动压缩阈值 (默认 80% 窗口上限且有足够的历史轮次)"""
         if self.context_window <= 0 or self.auto_compact_threshold <= 0:

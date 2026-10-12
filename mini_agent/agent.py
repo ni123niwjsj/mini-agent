@@ -18,6 +18,7 @@ from mini_agent.tools.bash import BashTool
 from mini_agent.tools.todo import TodoTool
 from mini_agent.tools.search import GrepTool, GlobTool
 from mini_agent.tools.web import WebFetchTool, WebSearchTool
+from mini_agent.subagent.task import TaskTool
 from mini_agent.core.instructions import build_system_prompt
 
 
@@ -40,11 +41,15 @@ class MiniAgent:
         max_turns: Optional[int] = None,
         auto_compact_threshold: Optional[float] = None,
         mcp_config: Optional[Union[str, Dict[str, Any]]] = None,
+        subagent_models: Optional[Dict[str, str]] = None,
+        subagent_max_turns: Optional[Union[int, Dict[str, int]]] = None,
     ):
         self.workspace_dir = os.path.abspath(workspace_dir)
         self.client = client or LLMClient()
         self._mcp_config = mcp_config
         self.mcp_manager: Optional[Any] = None
+        self.subagent_models = subagent_models
+        self.subagent_max_turns = subagent_max_turns
         
         # 初始化 SessionManager (若 sessions_dir 为 None 则禁用持久化)
         if sessions_dir is not None:
@@ -176,6 +181,18 @@ class MiniAgent:
                 f"{self.session_manager.current_session_id}.todo.json",
             )
         self.registry.register(TodoTool(storage_file=todo_storage))
+
+        self.registry.register(
+            TaskTool(
+                parent_client=self.client,
+                parent_registry=self.registry,
+                parent_context=self.context,
+                workspace_dir=workspace_dir,
+                user_presets=self.subagent_models,
+                max_turns=self.subagent_max_turns,
+                session_manager=self.session_manager,
+            )
+        )
 
     def register_tool(self, tool_or_func: Union[BaseTool, Callable]) -> None:
         """供用户自定义挂载新工具"""

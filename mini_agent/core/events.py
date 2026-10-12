@@ -59,6 +59,7 @@ class AgentEnd:
     final_response: str
     total_turns: int = 1
     usage: Optional[Dict[str, Any]] = None  # 全局上下文占用与会话累计 Token 用量统计
+    is_truncated: bool = False  # 是否因超过最大轮数或其他硬性限制截断结束
 
 
 @dataclass

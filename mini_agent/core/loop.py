@@ -210,6 +210,7 @@ async def agent_loop(
             final_response="任务达到最大轮数限制，已暂停。",
             total_turns=turn_count,
             usage=context.get_context_stats(),
+            is_truncated=True,
         )
 
     except Exception as e:

@@ -100,6 +100,7 @@ def build_system_prompt(workspace_dir: str, extra_rules: Optional[str] = None) -
             "- Always read files in full before making edits.\n"
             "- Use edit_file for precise text replacement; use write_file only for new files.\n"
             "- When an error occurs in tool execution, analyze the error output and attempt to self-correct.\n"
+            "- Delegate codebase exploration, architecture planning, or isolated subtasks to specialized subagents using the 'task' tool (explore/plan/general) to keep context clean.\n"
             "- Never run destructive commands (git reset --hard, git checkout ., git clean -fd, rm -rf).\n"
             "</rules>"
         ),
