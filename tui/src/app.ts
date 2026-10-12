@@ -109,6 +109,7 @@ export class MiniAgentTUI {
   private timer: NodeJS.Timeout | null = null;
   private currentAssistantMsg: AssistantMessageComponent | null = null;
   private activeOverlay: OverlayHandle | null = null;
+  private defaultThinkingExpanded = true;
 
   constructor(client: BridgeClient) {
     this.client = client;
@@ -147,7 +148,7 @@ export class MiniAgentTUI {
         ""
       );
       if (!this.currentAssistantMsg) {
-        this.currentAssistantMsg = new AssistantMessageComponent();
+        this.currentAssistantMsg = new AssistantMessageComponent(this.defaultThinkingExpanded);
         this.chatContainer.addChild(this.currentAssistantMsg);
       }
       this.currentAssistantMsg.setThinking(true, 0);
@@ -156,7 +157,7 @@ export class MiniAgentTUI {
 
     this.client.on("agent.delta", (params: { content: string; is_reasoning: boolean }) => {
       if (!this.currentAssistantMsg) {
-        this.currentAssistantMsg = new AssistantMessageComponent();
+        this.currentAssistantMsg = new AssistantMessageComponent(this.defaultThinkingExpanded);
         this.chatContainer.addChild(this.currentAssistantMsg);
       }
       if (params.is_reasoning) {
@@ -253,7 +254,7 @@ export class MiniAgentTUI {
       if (msg.role === "user") {
         this.chatContainer.addChild(new UserMessageComponent(msg.content));
       } else if (msg.role === "assistant") {
-        const asstComp = new AssistantMessageComponent();
+        const asstComp = new AssistantMessageComponent(this.defaultThinkingExpanded);
         if (msg.reasoning) {
           asstComp.appendReasoning(msg.reasoning, 0);
         }
@@ -313,6 +314,7 @@ export class MiniAgentTUI {
         `### 💡 Mini-Agent 常用指令速查指南\n\n` +
         `- **/model [序号/名称]** : 查看可选模型列表或按序号切换 (如 \`/model 1\` 或 \`/model gpt-4o\`)\n` +
         `- **/effort [强度/序号]** : 查看或调整思考强度 (1:low, 2:medium, 3:high, 4:none)\n` +
+        `- **/thinking** : 切换思考过程展开/折叠显示 (默认展开)\n` +
         `- **/turns [轮数]** : 查看或调整单次任务最大轮数限制 (默认 50，0 表示无限制)\n` +
         `- **/sessions** : 查看所有已保存的历史会话列表与时间、提问摘要\n` +
         `- **/resume [序号/ID]** : 恢复指定的历史会话 (直接输入 \`/resume\` 打开下拉菜单)\n` +
@@ -328,6 +330,16 @@ export class MiniAgentTUI {
         `- **/exit** : 退出交互终端\n\n` +
         `*✨ 动态引导: 模型执行任务期间，输入框自动变为【实时任务引导】，随时打字实时纠偏！*`;
       this.chatContainer.addChild(new Markdown(helpMsg, 1, 0, createMarkdownTheme()));
+      this.ui.requestRender();
+      return;
+    }
+
+    if (trimmed === "/thinking") {
+      this.defaultThinkingExpanded = !this.defaultThinkingExpanded;
+      const stateStr = this.defaultThinkingExpanded ? "展开 (实时呈现完整思考)" : "折叠 (仅显示耗时与用量)";
+      this.chatContainer.addChild(
+        new Text(chalk.cyan(`💡 思考链显示模式已切换为: [${stateStr}]`), 1, 0)
+      );
       this.ui.requestRender();
       return;
     }
@@ -696,7 +708,7 @@ export class MiniAgentTUI {
 
     // 正常用户任务提问
     this.chatContainer.addChild(new UserMessageComponent(trimmed));
-    this.currentAssistantMsg = new AssistantMessageComponent();
+    this.currentAssistantMsg = new AssistantMessageComponent(this.defaultThinkingExpanded);
     this.chatContainer.addChild(this.currentAssistantMsg);
 
     this.isWorking = true;

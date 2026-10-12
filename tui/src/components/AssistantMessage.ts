@@ -1,6 +1,6 @@
 import { Container, Markdown, Text, Spacer } from "@earendil-works/pi-tui";
 import chalk from "chalk";
-import { createMarkdownTheme } from "../theme.js";
+import { createMarkdownTheme, createThinkingMarkdownTheme } from "../theme.js";
 import type { ToolCallItem } from "../bridge/types.js";
 
 export class AssistantMessageComponent extends Container {
@@ -10,9 +10,11 @@ export class AssistantMessageComponent extends Container {
   private isThinking = false;
   private elapsedSec = 0;
   private toolCalls: ToolCallItem[] = [];
+  private isThinkingExpanded = true;
 
-  constructor() {
+  constructor(isThinkingExpanded = true) {
     super();
+    this.isThinkingExpanded = isThinkingExpanded;
     this.contentContainer = new Container();
     this.addChild(this.contentContainer);
   }
@@ -21,6 +23,17 @@ export class AssistantMessageComponent extends Container {
     this.isThinking = isThinking;
     this.elapsedSec = elapsedSec;
     this.rebuild();
+  }
+
+  setThinkingExpanded(expanded: boolean) {
+    this.isThinkingExpanded = expanded;
+    this.rebuild();
+  }
+
+  toggleThinkingExpanded(): boolean {
+    this.isThinkingExpanded = !this.isThinkingExpanded;
+    this.rebuild();
+    return this.isThinkingExpanded;
   }
 
   appendReasoning(delta: string, elapsedSec = 0) {
@@ -62,23 +75,51 @@ export class AssistantMessageComponent extends Container {
   private rebuild() {
     this.contentContainer.clear();
 
-    // 1. 思考状态指示 (单行折叠展示，对标 Pi)
+    const hasReasoning = Boolean(this.reasoningText.trim());
+
+    // 1. 思考状态指示与思考正文实时打字机流式输出
     if (this.isThinking) {
       const timeStr = this.elapsedSec > 0 ? ` (${this.elapsedSec}s)` : "";
       this.contentContainer.addChild(
         new Text(chalk.cyan.italic(`💭 Thinking${timeStr}...`), 1, 0)
       );
-    } else if (this.reasoningText || this.elapsedSec > 0) {
+      if (hasReasoning) {
+        this.contentContainer.addChild(
+          new Markdown(
+            this.reasoningText.trim(),
+            2,
+            0,
+            createThinkingMarkdownTheme(),
+            { color: (text) => chalk.dim(text), italic: true }
+          )
+        );
+      }
+    } else if (hasReasoning || this.elapsedSec > 0) {
       const timeStr = this.elapsedSec > 0 ? `${this.elapsedSec}s` : "<1s";
       const tokenCount = Math.round(this.reasoningText.length / 4);
       const tokenStr = tokenCount > 0 ? ` [${tokenCount} tokens]` : "";
+      const expandHint = hasReasoning && !this.isThinkingExpanded ? chalk.dim(" (输入 /thinking 展开)") : "";
+
       this.contentContainer.addChild(
-        new Text(chalk.dim.italic(`💭 Thought for ${timeStr}${tokenStr}`), 1, 0)
+        new Text(chalk.dim.italic(`💭 Thought for ${timeStr}${tokenStr}${expandHint}`), 1, 0)
       );
+
+      if (this.isThinkingExpanded && hasReasoning) {
+        this.contentContainer.addChild(
+          new Markdown(
+            this.reasoningText.trim(),
+            2,
+            0,
+            createThinkingMarkdownTheme(),
+            { color: (text) => chalk.dim(text), italic: true }
+          )
+        );
+      }
     }
 
     // 2. 工具调用清单
     if (this.toolCalls.length > 0) {
+      this.contentContainer.addChild(new Spacer(1));
       for (const tc of this.toolCalls) {
         const isDone = tc.output !== undefined;
         const isError = tc.is_error || false;
@@ -113,7 +154,7 @@ export class AssistantMessageComponent extends Container {
       }
     }
 
-    // 3. 正在流式生成的正文 (基于 marked 的实时 ANSI Markdown 渲染组件)
+    // 3. 正式回答正文 (基于 marked 的实时 ANSI Markdown 渲染组件)
     if (this.responseText.trim()) {
       this.contentContainer.addChild(new Spacer(1));
       this.contentContainer.addChild(
@@ -122,4 +163,3 @@ export class AssistantMessageComponent extends Container {
     }
   }
 }
-
