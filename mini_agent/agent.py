@@ -15,18 +15,7 @@ from mini_agent.tools.registry import ToolRegistry
 from mini_agent.tools.file import ReadFileTool, WriteFileTool
 from mini_agent.tools.edit import EditFileTool
 from mini_agent.tools.bash import BashTool
-
-
-def build_system_prompt(workspace_dir: str) -> str:
-    """构建注入环境信息的标准 System Prompt"""
-    return (
-        f"You are Mini-Agent, an autonomous coding and task execution assistant.\n"
-        f"- Current Workspace Directory: {workspace_dir}\n"
-        f"- Guidelines:\n"
-        f"  1. Be concise, direct, and accurate.\n"
-        f"  2. Use available tools whenever you need to examine files, run terminal commands, or perform computations.\n"
-        f"  3. When an error occurs in tool execution, analyze the error output and attempt to self-correct."
-    )
+from mini_agent.core.instructions import build_system_prompt
 
 
 @tool(description="计算两数相加")
@@ -121,6 +110,37 @@ class MiniAgent:
             return []
         return self.session_manager.list_sessions()
 
+    def undo(self) -> Tuple[Optional[str], int]:
+        """撤销最近一轮交互 (时光倒流，将分支指针回溯到上一轮提问节点之前)。
+        
+        Returns:
+            Tuple[new_leaf_id, message_count]: 新的叶子节点 ID 与重构后的消息条数
+        """
+        if not self.session_manager:
+            raise RuntimeError("未启用 SessionManager 持久化管理器")
+
+        new_leaf, messages = self.session_manager.undo()
+        self.context.load_messages(messages)
+        return new_leaf, len(messages)
+
+    def get_session_tree(self) -> Dict[str, Any]:
+        """获取当前会话的完整树状拓扑图"""
+        if not self.session_manager:
+            return {}
+        try:
+            return self.session_manager.get_tree()
+        except FileNotFoundError:
+            return {"entries": {}, "children_map": {}, "roots": [], "active_leaf_id": None}
+
+    def checkout(self, node_id: str) -> Tuple[Dict[str, Any], int]:
+        """将当前活跃分支指针切换到指定的节点 ID (时光穿梭)"""
+        if not self.session_manager:
+            raise RuntimeError("未启用 SessionManager 持久化管理器")
+
+        header, messages = self.session_manager.checkout(node_id)
+        self.context.load_messages(messages)
+        return header, len(messages)
+
     def _register_default_tools(self, workspace_dir: str) -> None:
         """注册默认基础工具集"""
         self.registry.register(add)
@@ -137,10 +157,16 @@ class MiniAgent:
         self,
         prompt: Union[str, List[Dict[str, Any]]],
         images: Optional[List[Dict[str, str]]] = None,
+        steering_queue: Optional[Any] = None,
     ) -> AsyncGenerator[Any, None]:
-        """流式运行任务并返回事件流 (支持纯文本与多模态图文输入)"""
+        """流式运行任务并返回事件流 (支持纯文本与多模态图文输入，以及实时动态任务引导)"""
         self.context.add_user_message(prompt, images=images)
-        async for event in agent_loop(self.context, self.client, self.registry):
+        async for event in agent_loop(
+            self.context,
+            self.client,
+            self.registry,
+            steering_queue=steering_queue,
+        ):
             yield event
 
     async def compact(self, keep_recent_turns: int = 2) -> Optional[Dict[str, Any]]:

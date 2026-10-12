@@ -37,11 +37,28 @@ class AgentContext:
     })
 
     def get_messages_for_llm(self) -> List[Dict[str, Any]]:
-        """组装完整的消息列表发给大模型（包含 System Prompt）"""
+        """组装符合标准 OpenAI 规范的消息列表发给大模型（包含 System Prompt，过滤内部元数据）"""
         formatted_messages = []
         if self.system_prompt:
             formatted_messages.append({"role": "system", "content": self.system_prompt})
-        formatted_messages.extend(self.messages)
+        for m in self.messages:
+            role = m.get("role")
+            if role == "tool":
+                formatted_messages.append({
+                    "role": "tool",
+                    "tool_call_id": m.get("tool_call_id", ""),
+                    "content": m.get("content", ""),
+                })
+            elif role == "assistant":
+                a_msg: Dict[str, Any] = {"role": "assistant", "content": m.get("content") or ""}
+                if m.get("tool_calls"):
+                    a_msg["tool_calls"] = m["tool_calls"]
+                formatted_messages.append(a_msg)
+            else:
+                formatted_messages.append({
+                    "role": role or "user",
+                    "content": m.get("content", ""),
+                })
         return formatted_messages
 
     def add_user_message(
@@ -74,9 +91,13 @@ class AgentContext:
         self,
         content: str,
         tool_calls: Optional[List[ToolCall]] = None,
+        reasoning: Optional[str] = None,
+        usage: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """添加 Assistant 回复（可附带工具调用请求）"""
+        """添加 Assistant 回复（可附带工具调用请求、深度思维链推理过程与 Token 用量）"""
         msg: Dict[str, Any] = {"role": "assistant", "content": content or ""}
+        if reasoning:
+            msg["reasoning"] = reasoning
         if tool_calls and len(tool_calls) > 0:
             msg["tool_calls"] = [
                 {
@@ -97,6 +118,8 @@ class AgentContext:
                 role="assistant",
                 content=content or "",
                 tool_calls=msg.get("tool_calls"),
+                reasoning=reasoning,
+                usage=usage,
             )
 
     def add_tool_result(
@@ -104,18 +127,24 @@ class AgentContext:
         tool_call_id: str,
         output: str,
         images: Optional[List[Dict[str, str]]] = None,
+        tool_name: Optional[str] = None,
+        is_error: bool = False,
     ) -> None:
-        """记录工具执行的返回结果 (对齐 Pi 的多模态协议桥接机制)"""
+        """记录工具执行的返回结果 (对齐 Pi 的多模态协议与 toolResult 封装)"""
         self.messages.append({
             "role": "tool",
             "tool_call_id": tool_call_id,
+            "tool_name": tool_name,
+            "is_error": is_error,
             "content": output,
         })
         if self.session_manager:
             self.session_manager.append_message(
                 role="tool",
                 tool_call_id=tool_call_id,
+                tool_name=tool_name,
                 content=output,
+                is_error=is_error,
             )
 
         # 若工具读取到了图像数据，紧随其后追加一条附带图像的 user 消息
@@ -149,9 +178,6 @@ class AgentContext:
         self.cumulative_usage["completion_tokens"] += usage.completion_tokens
         self.cumulative_usage["total_tokens"] += usage.total_tokens
         self.cumulative_usage["cached_tokens"] += usage.cached_tokens
-        
-        if self.session_manager:
-            self.session_manager.append_usage(u_dict)
 
     def should_auto_compact(self) -> bool:
         """检查当前上下文是否超过自动压缩阈值 (默认 80% 窗口上限且有足够的历史轮次)"""

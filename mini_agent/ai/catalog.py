@@ -47,6 +47,10 @@ DEFAULT_MODEL_SPECS: Dict[str, int] = {
     "deepseek-v4-pro": 1000000,
     "deepseek-v4.1-flash": 1000000,
     "deepseek-v4.1-flash-fast": 1000000,
+    "deepseek/deepseek-v4-flash": 1000000,
+    "deepseek/deepseek-v4-pro": 1000000,
+    "deepseek/deepseek-v4.1-flash": 1000000,
+    "deepseek/deepseek-v4.1-flash-fast": 1000000,
     # Qwen (通义千问)
     "qwen-turbo": 128000,
     "qwen-plus": 128000,
@@ -64,7 +68,7 @@ def infer_context_window(model_name: str) -> int:
 
     # 1. 匹配常见的数字后缀标签，如 1m, 500k, 256k, 128k, 64k, 32k, 16k, 8k, 4k
     m_1m = re.search(r"[-_/:](1m|1000k|1048k)\b", name_lower)
-    if m_1m or "-1m" in name_lower or "1m" in name_lower or "long" in name_lower:
+    if m_1m or "-1m" in name_lower or "1m" in name_lower or "long" in name_lower or "deepseek-v4" in name_lower:
         return 1000000
 
     m_500k = re.search(r"[-_/:](500k|512k)\b", name_lower)
@@ -135,9 +139,11 @@ def resolve_context_window(
     if specs_cache and short_name in specs_cache and specs_cache[short_name] > 0:
         return specs_cache[short_name]
 
-    # 检查静态字典
+    # 检查静态字典 (支持完整名称和去前缀名称)
     if clean_name in DEFAULT_MODEL_SPECS:
         return DEFAULT_MODEL_SPECS[clean_name]
+    if short_name in DEFAULT_MODEL_SPECS:
+        return DEFAULT_MODEL_SPECS[short_name]
     if short_name in DEFAULT_MODEL_SPECS:
         return DEFAULT_MODEL_SPECS[short_name]
 

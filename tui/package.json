@@ -1,0 +1,22 @@
+{
+  "name": "mini-agent-tui",
+  "version": "0.1.0",
+  "description": "TypeScript TUI Frontend for Mini-Agent (Pi-TUI Engine)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@earendil-works/pi-tui": "file:../../../fork项目专用/pi/packages/tui",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

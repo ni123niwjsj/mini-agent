@@ -146,8 +146,49 @@ Agent 采用单向事件流（Event-driven）设计，保证运行内核与展�
   - 在 ReAct 循环前置自动检测 `context.should_auto_compact()`（默认 80% 窗口阈值且具备足够轮次），触发时流式发射 `CompactionStart` 与 `CompactionEnd` 事件。
   - REPL 提供快捷指令 `/compact`，支持用户随时手动触发压缩，打印详细节省统计。
 
-### 第九阶段：全屏终端 TUI 与高级交互 (Interactive TUI & Extensions)
-- [ ] 基于 Rich/Textual 的常驻底栏 Footer（实时渲染 git branch, token, cache, context bar）。
-- [ ] 接入文档与代码库检索工具，形成完整的 RAG 问答与代码补全能力。
+### 第九阶段：现代终端交互与全屏 TUI (Modern CLI & Interactive TUI) - [核心完成 🚀]
+- [x] **9.1 交互式终端下拉选择器组件 (`cli/menu.py`)**
+  - 零外部依赖，使用标准库 termios / tty 捕获底层未缓冲文件描述符，支持方向键 `↑` / `↓` / `k` / `j` 与 `Enter` / `Esc`。
+  - 支持多页展示大量选项（针对 CommandCode 85 个模型自动分页 `[第 1/9 页]`），支持数字快捷键与非 TTY 优雅降级。
+- [x] **9.2 终端视觉与动效升级 (`cli/display.py`)**
+  - **实时状态条 (Status Bar & Context Gauge)**：常驻显示 `[🧠 模型]`、`[📊 槽位进度条 4k/1M]`、`[⚡ 缓存率]`、`[🌿 Git 分支]`。
+  - **动态思考与执行 Spinner**：思维规划时展示 `⠋ 正在分析任务...`，执行命令时展示 `⠙ 正在执行工具...`，首字到达时无缝平滑收起。
+  - **结构化工具面板**：为 `bash`、`read_file`、`edit_file` 定制专属图标与双层折叠面板，清晰高亮参数与结果。
+- [x] **9.3 增强型 REPL 交互与下拉联动 (`cli/repl.py`)**
+  - **Tab 自动补全与历史记录**：集成 `readline` 补全所有斜杠命令，持久化历史命令至 `~/.mini_agent_history`。
+  - **菜单联动**：输入无参数 `/model` 或 `/resume` 时，直接唤起交互式下拉菜单，按方向键回车即可一键切换或恢复。
+  - **转义清洗**：防御性过滤行首意外残留的方向键转义前缀（如 `[B/`）。
+- [x] **9.4 Live Markdown 富文本排版与代码语法高亮 (`cli/display.py`)**
+  - **实时消灭裸星号**：基于 `rich.live.Live` + `rich.markdown.Markdown`，将大模型输出实时转化为终端加粗、斜体、标题与表格，彻底消除 `**` 裸露字符。
+  - **代码与 Diff 语法高亮**：对回答中的代码块（`python`, `bash`, `json`, `html` 等）及工具执行结果（`read_file`, `edit_file`）自动调用 Monokai 主题语法着色，代码变更以绿色 `+` / 红色 `-` 呈现 Diff 质感。
+- [x] **9.5 现代沉浸式 TUI 与 Alt-Screen 全屏锁屏模式 (`cli/theme.py`, `cli/footer.py`, `cli/screen.py`, `cli/display.py`, `cli/repl.py`) - [已完成 ✅]**
+  - **用户消息满宽深蓝卡片**：对齐 Pi 的 `userMessageBg` (`#213b49`) 与中文字符宽度精确对齐，告别生硬的 `▶ 接收任务:`。
+  - **纯净流式思维链**：彻底移除 `[思考过程]` 与 `[回答]` 伪标签，采用柔和深灰斜体字符 (`#7b8891`) 流式展开，无感过渡。
+  - **工具执行满宽墨绿面板**：采用 `toolSuccessBg` (`#254131`)，支持行号、Diff `+44` 绿色高亮与超长安全折叠。
+  - **双行高密度常驻 Footer**：以紫色分割线 (`#5a5271`) 为界，展示 CWD/Git + Token 进出/缓存命中/费用 + 模型角标。
+  - **Alt-Screen 全屏锁屏支持**：利用 ANSI `\033[?1049h` 激活备用屏幕，支持 `/alt` 自由切换，退出时干净复位。
+
+### 第十阶段：工业级树状会话引擎与时光倒流 (Session Tree & Branching) - [已完成 ✅]
+详细技术对比与设计规范请参阅：[`docs/session_architecture_pi_comparison.md`](session_architecture_pi_comparison.md)
+- [x] **10.1 顶层强有序 Envelope 信封与固定键序 (`core/session.py`)**
+  - 为所有持久化条目严格对齐 Pi 顶层规范：`type`, `id` (8位短 hex), `parentId`, `timestamp` 稳居每行最前，前置字符完全垂直对齐。
+  - 双向兼容历史线性会话与扁平结构文件（兼容 `parent_id` / `session_header`）。
+- [x] **10.2 深度思维链分块与 Content Block 体系 (`core/session.py`, `core/context.py`, `core/loop.py`)**
+  - 对齐 Pi 标准 Content Block：思考链 (`type: "thinking"`) 与回答文本 (`type: "text"`)、工具调用 (`type: "toolCall"`) 严格独立分块存储，思考内容居于首块，清晰可查。
+  - 将 Token 用量嵌入 `message.usage`，消除原本造成会话树割裂的独立 usage 冗余行。
+- [x] **10.3 无损撤销与多分支时光穿梭 (`cli/repl.py`, `core/session.py`)**
+  - `/undo`：时光倒流，将当前分支指针回退到上一轮提问节点，新提问自动生长出新分支，历史数据零丢失。
+  - `/tree`：终端 ASCII 打印分支版本拓扑树（类似 `git log --graph`），标注活跃主线与当前叶子。
+  - `/checkout <node_id>`：分支自由穿梭，秒级重构任意历史节点的消息上下文。
+
+### 第十一阶段：项目级规范探测与 Prompt Cache 强化 (Project Instructions & AGENTS.md) - [已完成 ✅]
+- [x] **11.1 多级向上递归探测引擎 (`core/instructions.py`)**
+  - 多候选格式优先支持：`AGENTS.override.md` > `AGENTS.md` > `AGENTS.MD` > `CLAUDE.md` > `CLAUDE.MD`。
+  - 自动向上溯源至当前 Git 仓库根目录（解决在深层子目录执行 Agent 的痛点），并支持 `~/.mini-agent/` 全局兜底。
+- [x] **11.2 缓存亲和的 System Prompt 注入与结构化 XML 封装 (`core/instructions.py`, `agent.py`)**
+  - 将规范内容包装为标准 XML 块 `<project_context><project_instructions path="...">...</project_instructions></project_context>`。
+  - 静态拼接于 System Prompt 头部，为大模型建立 3000+ 字符的稳定前缀，大幅度提升后续轮次的 Prompt Cache 命中率。
+- [x] **11.3 根目录标准化规范文件 (`AGENTS.md`)**
+  - 为 Mini-Agent 仓库本身编写了首份工业级 `AGENTS.md`，涵盖交互风格、常用测试指令、编码纪律与 Git 安全防线。
 
 

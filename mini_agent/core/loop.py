@@ -38,10 +38,12 @@ async def agent_loop(
     context: AgentContext,
     llm_client: LLMClient,
     tool_registry: ToolRegistry,
+    steering_queue: Optional[Any] = None,
 ) -> AsyncGenerator[Any, None]:
     """ReAct 核心调度生成器。
     
     外层通过 async for event in agent_loop(...) 即可消费完整的生命周期。
+    支持传入 steering_queue 实现无阻塞动态任务引导。
     """
     last_prompt = context.get_last_user_prompt()
     yield AgentStart(user_prompt=last_prompt)
@@ -52,7 +54,14 @@ async def agent_loop(
         while context.max_turns <= 0 or turn_count < context.max_turns:
             turn_count += 1
 
-            # 0. 检查是否触发智能上下文自动压缩 (Auto-Compaction)
+            # 0.1 消费动态任务引导 (Steering Guidance)
+            if steering_queue is not None and hasattr(steering_queue, "empty") and not steering_queue.empty():
+                while not steering_queue.empty():
+                    steer_text = steering_queue.get_nowait()
+                    if steer_text:
+                        context.add_user_message(f"【动态任务引导】{steer_text}")
+
+            # 0.2 检查是否触发智能上下文自动压缩 (Auto-Compaction)
             if context.should_auto_compact():
                 tokens_before = context.latest_usage.get("prompt_tokens", 0)
                 yield CompactionStart(tokens_before=tokens_before)
@@ -77,10 +86,12 @@ async def agent_loop(
 
             # 2. 调用大模型，实时流式消费
             response: Optional[ModelResponse] = None
+            thought_chunks: List[str] = []
             async for event_type, data in llm_client.stream_chat(messages, tools=tools):
                 if event_type == "text_delta":
                     yield AssistantDelta(content=data, is_reasoning=False)
                 elif event_type == "reasoning_delta":
+                    thought_chunks.append(data)
                     yield AssistantDelta(content=data, is_reasoning=True)
                 elif event_type == "response":
                     response = data
@@ -88,6 +99,8 @@ async def agent_loop(
             if response is None:
                 yield Error(message="大模型未返回有效推理结果。")
                 break
+
+            reasoning_text = "".join(thought_chunks) if thought_chunks else None
 
             # 3. 记录模型消耗并广播本轮结束事件
             if response and getattr(response, "usage", None):
@@ -102,10 +115,12 @@ async def agent_loop(
                 usage=response.usage.to_dict() if getattr(response, "usage", None) else None,
             )
 
-            # 4. 把模型回复写入上下文
+            # 4. 把模型回复写入上下文 (附带结构化思考链与 Token 用量)
             context.add_assistant_message(
                 content=response.content,
                 tool_calls=response.tool_calls,
+                reasoning=reasoning_text,
+                usage=response.usage.to_dict() if getattr(response, "usage", None) else None,
             )
 
             # 5. 判断终止条件：如果大模型没有要求调用任何工具，说明任务已搞定，退出！
@@ -137,8 +152,14 @@ async def agent_loop(
                     is_error=res.is_error,
                 )
 
-                # 6.4 将执行结果写回上下文，让模型在下一轮循环看到 (包含多模态附图)
-                context.add_tool_result(tc.id, res.content, images=getattr(res, "images", None))
+                # 6.4 将执行结果写回上下文，让模型在下一轮循环看到 (包含多模态附图与工具元数据)
+                context.add_tool_result(
+                    tool_call_id=tc.id,
+                    output=res.content,
+                    images=getattr(res, "images", None),
+                    tool_name=tc.name,
+                    is_error=res.is_error,
+                )
 
         # 超过最大轮数防御机制 (避免模型死循环烧 Token)
         yield Error(message=f"已达到单次任务最大轮数限制 ({context.max_turns} 轮)。如需继续推进，可使用 /turns 提高限制或直接输入指令继续。")

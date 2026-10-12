@@ -34,12 +34,17 @@ class LLMClient:
         self,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        model: str = "gpt-4o",
+        model: Optional[str] = None,
         reasoning_effort: Optional[str] = None,
     ):
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+        except ImportError:
+            pass
         self.api_key = api_key or os.getenv("OPENAI_API_KEY", "EMPTY")
         self.base_url = base_url or os.getenv("OPENAI_BASE_URL", None)
-        self.model = model
+        self.model = model or os.getenv("MINI_AGENT_MODEL", "gpt-4o")
         self.reasoning_effort = reasoning_effort or os.getenv("REASONING_EFFORT", None)
         self._model_specs_cache: Dict[str, int] = {}
         self._specs_list: List[ModelSpec] = []
@@ -82,7 +87,7 @@ class LLMClient:
                     or (getattr(m, "model_extra", None) or {}).get("context_window")
                 )
                 if not ctx_len or not isinstance(ctx_len, int) or ctx_len <= 0:
-                    ctx_len = infer_context_window(m.id)
+                    ctx_len = resolve_context_window(m.id)
 
                 m_name = (
                     getattr(m, "name", None)
@@ -93,14 +98,47 @@ class LLMClient:
                 specs.append(spec)
                 specs_cache[m.id] = ctx_len
 
+            # 补充常见推荐模型列表 (确保用户有丰富的可选列表)
+            existing_ids = {s.id for s in specs}
+            popular_defaults = [
+                ("deepseek/deepseek-v4.1-flash", 1000000),
+                ("deepseek/deepseek-v4.1-flash-fast", 1000000),
+                ("deepseek/deepseek-v4-pro", 1000000),
+                ("deepseek-chat", 128000),
+                ("deepseek-reasoner", 128000),
+                ("claude-3-7-sonnet", 200000),
+                ("claude-3-5-sonnet", 200000),
+                ("gpt-4o", 128000),
+                ("o3-mini", 200000),
+                ("gemini-2.0-flash", 1048576),
+                ("qwen-plus", 128000),
+            ]
+            for p_id, p_ctx in popular_defaults:
+                if p_id not in existing_ids:
+                    spec = ModelSpec(id=p_id, name=p_id, context_length=p_ctx)
+                    specs.append(spec)
+                    specs_cache[p_id] = p_ctx
+
             self._specs_list = specs
             self._model_specs_cache = specs_cache
             return specs
         except Exception:
-            # 网络异常或接口不通时，优雅降级为启发式规则推断
-            fallback_len = infer_context_window(self.model)
+            # 网络异常或接口不通时，优雅降级为当前模型与静态推荐列表
+            fallback_len = resolve_context_window(self.model)
             self._model_specs_cache[self.model] = fallback_len
-            return [ModelSpec(id=self.model, name=self.model, context_length=fallback_len)]
+            fallback_specs = [ModelSpec(id=self.model, name=self.model, context_length=fallback_len)]
+            for p_id, p_ctx in [
+                ("deepseek/deepseek-v4.1-flash", 1000000),
+                ("deepseek/deepseek-v4.1-flash-fast", 1000000),
+                ("deepseek-chat", 128000),
+                ("claude-3-7-sonnet", 200000),
+                ("gpt-4o", 128000),
+            ]:
+                if p_id != self.model:
+                    fallback_specs.append(ModelSpec(id=p_id, name=p_id, context_length=p_ctx))
+                    self._model_specs_cache[p_id] = p_ctx
+            self._specs_list = fallback_specs
+            return fallback_specs
 
     async def list_models(self) -> List[str]:
         """动态从 Provider 服务端获取可用模型 ID 列表"""
@@ -196,8 +234,8 @@ class LLMClient:
                 full_content += delta.content
                 yield ("text_delta", delta.content)
 
-            # 2. 思考链增量 (如 DeepSeek-R1 / Qwen reasoning)
-            reasoning = getattr(delta, "reasoning_content", None)
+            # 2. 思考链增量 (如 DeepSeek-R1 / Qwen / Claude reasoning)
+            reasoning = getattr(delta, "reasoning_content", None) or getattr(delta, "reasoning", None)
             if reasoning:
                 yield ("reasoning_delta", reasoning)
 

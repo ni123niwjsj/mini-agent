@@ -1,0 +1,10 @@
+{
+  "name": "mini-agent",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "tui": "npm start --prefix tui",
+    "tui:dev": "npm run dev --prefix tui",
+    "tui:build": "npm run build --prefix tui"
+  }
+}
