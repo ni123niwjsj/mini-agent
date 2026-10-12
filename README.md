@@ -208,17 +208,17 @@ Mini-Agent 集成了对齐国际顶级代码智能体评测基准 **SWE-bench Li
 
 在真实的知名开源仓库（`pallets/flask` 与 `astropy/astropy`）官方 Issue 实测中取得 **77.8% (7/9) 官方解决率 (Resolved Rate)**：
 
-| 仓库 / 领域 | 题目 ID | 评测判定 | 耗时 | 工具调用 |
-| :--- | :--- | :---: | :---: | :---: |
-| `pallets/flask` | `pallets__flask-4992` | 🎉 **PASSED** | 32.5s | 7 calls |
-| `pallets/flask` | `pallets__flask-5063` | 🎉 **PASSED** | 51.6s | 11 calls |
-| `pallets/flask` | `pallets__flask-4045` | ❌ FAILED | 41.2s | 8 calls |
-| `astropy/astropy` | `astropy__astropy-14182` | 🎉 **PASSED** | 62.1s | 13 calls |
-| `astropy/astropy` | `astropy__astropy-14365` | ❌ FAILED | 37.8s | 8 calls |
-| `astropy/astropy` | `astropy__astropy-12907` | 🎉 **PASSED** | 45.3s | 10 calls |
-| `astropy/astropy` | `astropy__astropy-6938` | 🎉 **PASSED** | 48.7s | 9 calls |
-| `astropy/astropy` | `astropy__astropy-7746` | 🎉 **PASSED** | 58.2s | 12 calls |
-| `astropy/astropy` | `astropy__astropy-14995` | 🎉 **PASSED** | 43.1s | 9 calls |
+| 仓库 / 领域 | 题目 ID | 评测判定 | 耗时 | 轮数 | 工具调用 |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| `pallets/flask` | `pallets__flask-4992` | 🎉 **PASSED** | 100.8s | 15 轮 | 18 calls |
+| `pallets/flask` | `pallets__flask-5063` | 🎉 **PASSED** | 319.9s | 25 轮 | 28 calls |
+| `pallets/flask` | `pallets__flask-4045` | ❌ FAILED | 73.9s | 15 轮 | 19 calls |
+| `astropy/astropy` | `astropy__astropy-12907` | 🎉 **PASSED** | 136.3s | 25 轮 | 26 calls |
+| `astropy/astropy` | `astropy__astropy-14182` | 🎉 **PASSED** | 232.5s | 25 轮 | 29 calls |
+| `astropy/astropy` | `astropy__astropy-14365` | ❌ FAILED | 159.4s | 25 轮 | 26 calls |
+| `astropy/astropy` | `astropy__astropy-14995` | 🎉 **PASSED** | 193.2s | 25 轮 | 30 calls |
+| `astropy/astropy` | `astropy__astropy-6938` | 🎉 **PASSED** | 147.3s | 22 轮 | 23 calls |
+| `astropy/astropy` | `astropy__astropy-7746` | 🎉 **PASSED** | 117.4s | 14 轮 | 18 calls |
 
 完整官方评测结果与补丁证据见：
 - 官方评测报告：[`benchmarks/results/mini-agent-deepseek.mini_agent_official.json`](benchmarks/results/mini-agent-deepseek.mini_agent_official.json)
