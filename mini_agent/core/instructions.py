@@ -93,7 +93,9 @@ def build_system_prompt(workspace_dir: str, extra_rules: Optional[str] = None) -
         (
             "<rules>\n"
             "- Be concise, direct, and accurate.\n"
-            "- Use available tools (read_file, write_file, edit_file, bash) to examine files, modify code, or run commands.\n"
+            "- Use 'grep' and 'glob' for codebase search and file discovery instead of running find or grep in bash.\n"
+            "- Use 'read_file', 'write_file', 'edit_file', and 'bash' to examine files, modify code, or run commands.\n"
+            "- For tasks involving multiple steps, use the 'todo' tool to plan and track your steps (add, update, list).\n"
             "- Always read files in full before making edits.\n"
             "- Use edit_file for precise text replacement; use write_file only for new files.\n"
             "- When an error occurs in tool execution, analyze the error output and attempt to self-correct.\n"

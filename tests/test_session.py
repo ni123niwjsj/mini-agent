@@ -319,6 +319,40 @@ class TestSessionPersistence(unittest.TestCase):
         self.assertEqual(messages[1]["reasoning"], "老思考")
         self.assertEqual(messages[2]["content"], "老输出")
 
+    def test_resume_restores_context_stats(self):
+        """测试会话恢复时立即回显 Token 用量与缓存统计 (解决 resume 后为 0 的问题)"""
+        manager = SessionManager(storage_dir=self.test_dir, model="test-model")
+        sid = manager.current_session_id
+
+        # 写入包含 usage 统计的会话记录
+        manager.append_message(role="user", content="请分析代码")
+        manager.append_message(
+            role="assistant",
+            content="这是分析结果",
+            usage={
+                "prompt_tokens": 2048,
+                "completion_tokens": 512,
+                "total_tokens": 2560,
+                "cached_tokens": 1024,
+                "cache_hit_rate": 50.0,
+            },
+        )
+
+        # 模拟重启后通过 MiniAgent 恢复会话
+        agent = MiniAgent(
+            client=LLMClient(model="mock"),
+            sessions_dir=self.test_dir,
+            session_id=sid,
+        )
+
+        stats = agent.context.get_context_stats()
+        self.assertEqual(stats["current_tokens"], 2048)
+        self.assertEqual(stats["latest_cached_tokens"], 1024)
+        self.assertEqual(stats["latest_cache_hit_rate"], 50.0)
+        self.assertEqual(stats["cumulative_prompt_tokens"], 2048)
+        self.assertEqual(stats["cumulative_cached_tokens"], 1024)
+        self.assertGreater(stats["percent"], 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()

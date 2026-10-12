@@ -165,8 +165,55 @@ class AgentContext:
                 self.session_manager.append_message(role="user", content=img_blocks)
 
     def load_messages(self, messages: List[Dict[str, Any]]) -> None:
-        """从外部（如持久化会话）加载恢复历史消息列表"""
+        """从外部（如持久化会话）加载恢复历史消息列表，并智能复原 Token 用量与缓存统计"""
         self.messages = list(messages)
+        self._restore_usage_from_messages()
+
+    def _restore_usage_from_messages(self) -> None:
+        """从历史消息记录中重建累积与最新 Token 统计指标"""
+        cum_prompt = 0
+        cum_comp = 0
+        cum_total = 0
+        cum_cached = 0
+        last_usage: Optional[Dict[str, Any]] = None
+
+        for msg in self.messages:
+            u = msg.get("usage")
+            if isinstance(u, dict):
+                p = u.get("prompt_tokens", 0) or 0
+                c = u.get("completion_tokens", 0) or 0
+                t = u.get("total_tokens", 0) or (p + c)
+                cached = u.get("cached_tokens", 0) or 0
+                cum_prompt += p
+                cum_comp += c
+                cum_total += t
+                cum_cached += cached
+                last_usage = u
+
+        if last_usage:
+            self.latest_usage = dict(last_usage)
+            self.cumulative_usage = {
+                "prompt_tokens": cum_prompt,
+                "completion_tokens": cum_comp,
+                "total_tokens": cum_total,
+                "cached_tokens": cum_cached,
+            }
+        elif self.messages:
+            # 兜底：若旧会话历史未记录 usage，通过消息字符数估算当前上下文大小
+            est_tokens = sum(len(str(m.get("content", ""))) for m in self.messages) // 3
+            self.latest_usage = {
+                "prompt_tokens": est_tokens,
+                "completion_tokens": 0,
+                "total_tokens": est_tokens,
+                "cached_tokens": 0,
+                "cache_hit_rate": 0.0,
+            }
+            self.cumulative_usage = {
+                "prompt_tokens": est_tokens,
+                "completion_tokens": 0,
+                "total_tokens": est_tokens,
+                "cached_tokens": 0,
+            }
 
     def record_usage(self, usage: Optional[TokenUsage]) -> None:
         """记录并累加本轮模型的 Token 消耗与缓存情况"""

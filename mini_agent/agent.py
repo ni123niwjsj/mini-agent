@@ -15,6 +15,8 @@ from mini_agent.tools.registry import ToolRegistry
 from mini_agent.tools.file import ReadFileTool, WriteFileTool
 from mini_agent.tools.edit import EditFileTool
 from mini_agent.tools.bash import BashTool
+from mini_agent.tools.todo import TodoTool
+from mini_agent.tools.search import GrepTool, GlobTool
 from mini_agent.core.instructions import build_system_prompt
 
 
@@ -65,14 +67,14 @@ class MiniAgent:
 
         self.context = AgentContext(**context_kwargs)
 
+        self.registry = ToolRegistry()
+        self._register_default_tools(self.workspace_dir)
+
         # 如果指定了已存在会话，则加载历史消息
         if self.session_manager and session_id:
             session_file = self.session_manager.get_session_file(session_id)
             if os.path.exists(session_file):
                 self.load_session(session_id)
-        
-        self.registry = ToolRegistry()
-        self._register_default_tools(self.workspace_dir)
 
     @property
     def current_session_id(self) -> Optional[str]:
@@ -88,6 +90,11 @@ class MiniAgent:
                 cwd=self.workspace_dir,
                 model=getattr(self.client, "model", ""),
             )
+            todo_tool = self.registry.get("todo")
+            if isinstance(todo_tool, TodoTool):
+                todo_tool.set_storage_file(
+                    os.path.join(self.session_manager.storage_dir, f"{sid}.todo.json")
+                )
             return sid
         return ""
 
@@ -102,6 +109,11 @@ class MiniAgent:
 
         header, messages = self.session_manager.load_session(session_id)
         self.context.load_messages(messages)
+        todo_tool = self.registry.get("todo")
+        if isinstance(todo_tool, TodoTool):
+            todo_tool.set_storage_file(
+                os.path.join(self.session_manager.storage_dir, f"{session_id}.todo.json")
+            )
         return header, len(messages)
 
     def list_sessions(self) -> List[Dict[str, Any]]:
@@ -148,6 +160,16 @@ class MiniAgent:
         self.registry.register(WriteFileTool(workspace_dir=workspace_dir))
         self.registry.register(EditFileTool(workspace_dir=workspace_dir))
         self.registry.register(BashTool(cwd=workspace_dir))
+        self.registry.register(GrepTool(workspace_dir=workspace_dir))
+        self.registry.register(GlobTool(workspace_dir=workspace_dir))
+
+        todo_storage = None
+        if self.session_manager and self.session_manager.current_session_id:
+            todo_storage = os.path.join(
+                self.session_manager.storage_dir,
+                f"{self.session_manager.current_session_id}.todo.json",
+            )
+        self.registry.register(TodoTool(storage_file=todo_storage))
 
     def register_tool(self, tool_or_func: Union[BaseTool, Callable]) -> None:
         """供用户自定义挂载新工具"""

@@ -7,8 +7,10 @@
 4. 内置 Mock 模式：便于无网络环境与单测断言。
 """
 
+import asyncio
 import json
 import os
+import random
 from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 from mini_agent.ai.types import ModelResponse, ToolCall, TokenUsage
 from mini_agent.ai.catalog import ModelSpec, infer_context_window, resolve_context_window
@@ -36,6 +38,8 @@ class LLMClient:
         base_url: Optional[str] = None,
         model: Optional[str] = None,
         reasoning_effort: Optional[str] = None,
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
     ):
         try:
             from dotenv import load_dotenv
@@ -46,6 +50,8 @@ class LLMClient:
         self.base_url = base_url or os.getenv("OPENAI_BASE_URL", None)
         self.model = model or os.getenv("MINI_AGENT_MODEL", "gpt-4o")
         self.reasoning_effort = reasoning_effort or os.getenv("REASONING_EFFORT", None)
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
         self._model_specs_cache: Dict[str, int] = {}
         self._specs_list: List[ModelSpec] = []
 
@@ -188,7 +194,24 @@ class LLMClient:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
 
-        response = await client.chat.completions.create(**kwargs)
+        # 循环重试机制：支持退避与随机抖动 (Exponential Backoff + Jitter)
+        response = None
+        attempt = 0
+        while True:
+            try:
+                response = await client.chat.completions.create(**kwargs)
+                break
+            except Exception as e:
+                attempt += 1
+                # 检查是否为不可重试的客户端错误 (如 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found)
+                status_code = getattr(e, "status_code", None)
+                if status_code and status_code in (400, 401, 403, 404):
+                    raise
+                if attempt > self.max_retries:
+                    raise
+                # 计算退避时间: base_delay * 2^(attempt - 1) + jitter
+                delay = self.retry_delay * (2 ** (attempt - 1)) + random.uniform(0.1, 0.5)
+                await asyncio.sleep(delay)
 
         full_content = ""
         # 累积流式工具调用的缓存字典: index -> {"id": ..., "name": ..., "arguments_str": ...}

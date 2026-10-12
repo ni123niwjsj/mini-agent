@@ -502,6 +502,8 @@ class SessionManager:
                     msg["is_error"] = entry["is_error"]
                 if entry.get("reasoning"):
                     msg["reasoning"] = entry["reasoning"]
+                if entry.get("usage"):
+                    msg["usage"] = entry["usage"]
                 messages.append(msg)
 
         # 更新当前活动叶子
