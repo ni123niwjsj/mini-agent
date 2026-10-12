@@ -17,6 +17,7 @@ from mini_agent.tools.edit import EditFileTool
 from mini_agent.tools.bash import BashTool
 from mini_agent.tools.todo import TodoTool
 from mini_agent.tools.search import GrepTool, GlobTool
+from mini_agent.tools.web import WebFetchTool, WebSearchTool
 from mini_agent.core.instructions import build_system_prompt
 
 
@@ -38,9 +39,12 @@ class MiniAgent:
         session_id: Optional[str] = None,
         max_turns: Optional[int] = None,
         auto_compact_threshold: Optional[float] = None,
+        mcp_config: Optional[Union[str, Dict[str, Any]]] = None,
     ):
         self.workspace_dir = os.path.abspath(workspace_dir)
         self.client = client or LLMClient()
+        self._mcp_config = mcp_config
+        self.mcp_manager: Optional[Any] = None
         
         # 初始化 SessionManager (若 sessions_dir 为 None 则禁用持久化)
         if sessions_dir is not None:
@@ -162,6 +166,8 @@ class MiniAgent:
         self.registry.register(BashTool(cwd=workspace_dir))
         self.registry.register(GrepTool(workspace_dir=workspace_dir))
         self.registry.register(GlobTool(workspace_dir=workspace_dir))
+        self.registry.register(WebFetchTool())
+        self.registry.register(WebSearchTool())
 
         todo_storage = None
         if self.session_manager and self.session_manager.current_session_id:
@@ -195,3 +201,39 @@ class MiniAgent:
         """手动对当前 Agent 上下文执行原子压缩"""
         from mini_agent.core.compaction import perform_compaction
         return await perform_compaction(self.context, self.client, keep_recent_turns=keep_recent_turns)
+
+    async def load_mcp(self, config: Optional[Union[str, Dict[str, Any]]] = None) -> List[str]:
+        """加载并启动外部 MCP 服务，自动发现并将工具挂载至 ToolRegistry (支持幂等调用)"""
+        from mini_agent.mcp.manager import MCPManager
+
+        target_config = config or self._mcp_config
+        if target_config is None:
+            target_config = MCPManager.find_config_file(self.workspace_dir)
+
+        if not target_config:
+            return []
+
+        # 幂等性防护：若未指定新配置且已完成过加载，直接返回已有工具列表，避免重复衍生孤儿子进程
+        if config is None and getattr(self, "_mcp_loaded", False) and self.mcp_manager is not None:
+            return [t.name for t in self.mcp_manager.tools]
+
+        # 若显式传入新配置重载，先平滑关闭旧的 MCP 进程集群并解绑旧工具
+        if config is not None and self.mcp_manager is not None:
+            await self.close_mcp()
+
+        if self.mcp_manager is None:
+            self.mcp_manager = MCPManager(workspace_dir=self.workspace_dir)
+
+        tools = await self.mcp_manager.start_all(target_config, registry=self.registry)
+        self._mcp_loaded = True
+        return [t.name for t in tools]
+
+    async def close_mcp(self) -> None:
+        """安全平滑关闭所有 MCP 子进程并从 ToolRegistry 解绑对应工具"""
+        if self.mcp_manager:
+            for t in self.mcp_manager.tools:
+                self.registry.unregister(t.name)
+            await self.mcp_manager.close()
+            self.mcp_manager = None
+            self._mcp_loaded = False
+

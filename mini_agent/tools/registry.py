@@ -36,6 +36,10 @@ class ToolRegistry:
         """按名称查找工具"""
         return self._tools.get(name)
 
+    def unregister(self, name: str) -> Optional[BaseTool]:
+        """按名称注销工具"""
+        return self._tools.pop(name, None)
+
     def list_tools(self) -> List[str]:
         """获取所有已注册的工具名称列表"""
         return list(self._tools.keys())

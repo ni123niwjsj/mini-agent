@@ -5,6 +5,7 @@
 2. GlobTool: 基于路径感知通配符快速发现工作区文件与目录结构。
 """
 
+import asyncio
 import fnmatch
 import os
 import re
@@ -264,6 +265,45 @@ class GrepTool(BaseTool):
         )
         effective_hidden = include_hidden or is_hidden_target
 
+        matches_by_file, total_matches = await asyncio.to_thread(
+            self._sync_grep_files,
+            target_root,
+            effective_hidden,
+            file_pattern,
+            regex,
+            max_results,
+        )
+
+        if not matches_by_file:
+            return ToolResult(
+                content=f"🔍 未找到匹配 '{pattern}' 的内容 (搜索范围: {path or '.'})",
+                is_error=False,
+                details={"pattern": pattern, "matched_count": 0},
+            )
+
+        output_lines = [f"🔍 找到 {total_matches} 处匹配 (模式: '{pattern}'):"]
+        for rpath, lines in matches_by_file.items():
+            output_lines.append(f"\n{rpath}:")
+            output_lines.extend(lines)
+
+        if total_matches >= max_results:
+            output_lines.append(f"\n⚠️ 已达到最大结果上限 ({max_results} 行)，更多匹配已省略。")
+
+        return ToolResult(
+            content="\n".join(output_lines),
+            is_error=False,
+            details={"pattern": pattern, "matched_count": total_matches, "files_count": len(matches_by_file)},
+        )
+
+    def _sync_grep_files(
+        self,
+        target_root: str,
+        effective_hidden: bool,
+        file_pattern: Optional[str],
+        regex: re.Pattern,
+        max_results: int,
+    ) -> Tuple[Dict[str, List[str]], int]:
+        """在后台工作线程执行同步文件遍历与内容扫描"""
         matches_by_file: Dict[str, List[str]] = {}
         total_matches = 0
 
@@ -312,26 +352,7 @@ class GrepTool(BaseTool):
             except Exception:
                 continue
 
-        if not matches_by_file:
-            return ToolResult(
-                content=f"🔍 未找到匹配 '{pattern}' 的内容 (搜索范围: {path or '.'})",
-                is_error=False,
-                details={"pattern": pattern, "matched_count": 0},
-            )
-
-        output_lines = [f"🔍 找到 {total_matches} 处匹配 (模式: '{pattern}'):"]
-        for rpath, lines in matches_by_file.items():
-            output_lines.append(f"\n{rpath}:")
-            output_lines.extend(lines)
-
-        if total_matches >= max_results:
-            output_lines.append(f"\n⚠️ 已达到最大结果上限 ({max_results} 行)，更多匹配已省略。")
-
-        return ToolResult(
-            content="\n".join(output_lines),
-            is_error=False,
-            details={"pattern": pattern, "matched_count": total_matches, "files_count": len(matches_by_file)},
-        )
+        return matches_by_file, total_matches
 
 
 class GlobTool(BaseTool):
@@ -402,6 +423,46 @@ class GlobTool(BaseTool):
         effective_hidden = include_hidden or is_hidden_target
 
         regex, match_dir_only = glob_to_path_regex(pattern, case_sensitive=case_sensitive)
+
+        matched_paths = await asyncio.to_thread(
+            self._sync_glob_paths,
+            target_root,
+            effective_hidden,
+            regex,
+            match_dir_only,
+            max_results,
+        )
+
+        if not matched_paths:
+            return ToolResult(
+                content=f"📁 未找到匹配模式 '{pattern}' 的路径 (范围: {path or '.'})",
+                is_error=False,
+                details={"pattern": pattern, "matched_count": 0},
+            )
+
+        matched_paths.sort()
+        output_lines = [f"📁 找到 {len(matched_paths)} 个匹配项 (模式: '{pattern}'):"]
+        for p in matched_paths:
+            output_lines.append(f"  {p}")
+
+        if len(matched_paths) >= max_results:
+            output_lines.append(f"\n⚠️ 已达到最大结果上限 ({max_results} 个)，更多项已省略。")
+
+        return ToolResult(
+            content="\n".join(output_lines),
+            is_error=False,
+            details={"pattern": pattern, "matched_count": len(matched_paths)},
+        )
+
+    def _sync_glob_paths(
+        self,
+        target_root: str,
+        effective_hidden: bool,
+        regex: re.Pattern,
+        match_dir_only: bool,
+        max_results: int,
+    ) -> List[str]:
+        """在后台工作线程执行目录与文件 Glob 匹配"""
         matched_paths: List[str] = []
 
         # 如果 target_root 是单个文件
@@ -447,23 +508,4 @@ class GlobTool(BaseTool):
                 if len(matched_paths) >= max_results:
                     break
 
-        if not matched_paths:
-            return ToolResult(
-                content=f"📁 未找到匹配模式 '{pattern}' 的路径 (范围: {path or '.'})",
-                is_error=False,
-                details={"pattern": pattern, "matched_count": 0},
-            )
-
-        matched_paths.sort()
-        output_lines = [f"📁 找到 {len(matched_paths)} 个匹配项 (模式: '{pattern}'):"]
-        for p in matched_paths:
-            output_lines.append(f"  {p}")
-
-        if len(matched_paths) >= max_results:
-            output_lines.append(f"\n⚠️ 已达到最大结果上限 ({max_results} 个)，更多项已省略。")
-
-        return ToolResult(
-            content="\n".join(output_lines),
-            is_error=False,
-            details={"pattern": pattern, "matched_count": len(matched_paths)},
-        )
+        return matched_paths

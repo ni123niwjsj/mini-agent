@@ -57,15 +57,18 @@ flowchart LR
   3. **LLM API 指数退避重试 (Exponential Backoff & Jitter)**：
      - 在 `ai/client.py` 内部支持请求自动重试，捕获网络异常与临时服务端报错，带有指数退避倍率与随机抖动，对 400/401 快速穿透抛错。
 
-### 阶段三：工具生态与并发执行（P2）
+### 阶段三：工具生态与并发执行（P2 - ✅ 已完成）
 * **目标**：拓宽 Agent 获取外部知识的边界，并大幅加速多工具调度吞吐。
 * **关键交付**：
-  1. **并行工具调度 (`asyncio.gather`)**：
-     - 在 `loop.py` 中，对大模型单轮返回的独立工具调用进行并发调度，原子聚合结果返回给上下文。
+  1. **并行工具调度 (`loop.py`)**：
+     - 在 `mini_agent/core/loop.py` 中，支持多工具并发异步调度与结果流式抛送；
+     - 严格保持工具调用在 Context 历史消息中的顺序保真度，单个工具崩溃具备独立异常隔离。
   2. **联网检索与网页提取工具 (`web_search` & `web_fetch`)**：
-     - 提供标准 HTTP 网页抓取与文本净化工具，支持阅读线上开发文档。
-  3. **Model Context Protocol (MCP) 客户端集成**：
-     - 允许通过配置文件挂载外部标准 MCP 工具服务器，实现工具生态免开发即插即用。
+     - `web_fetch`：抓取指定 URL 页面，内置轻量 DOM 流式净化并转成高可读 Markdown，提供 50KB 默认防 Token 爆炸截断；
+     - `web_search`：关键词互联网检索，默认双引擎设计（优先 Tavily API，平滑回退免 Key 的 DuckDuckGo HTML 引擎）。
+  3. **Model Context Protocol (MCP) 客户端集成 (`mini_agent/mcp/`)**：
+     - 基于标准 JSON-RPC 2.0 over Stdio 协议实现 `StdioMCPClient`，支持完整生命周期与安全握手；
+     - 提供 `MCPToolWrapper` 与 `MCPManager`，支持通过工作区 `mcp_servers.json` 或 `.mcp.json` 免开发即插即用挂载外部工具生态。
 
 ### 阶段四：交互形态演进（P3）
 * **目标**：提供桌面级、富文本的浏览器交互界面。

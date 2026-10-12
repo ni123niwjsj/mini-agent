@@ -15,7 +15,8 @@
 - Error: 异常报错
 """
 
-from typing import Any, AsyncGenerator, Optional
+import asyncio
+from typing import Any, AsyncGenerator, Dict, List, Optional
 from mini_agent.ai.client import LLMClient
 from mini_agent.ai.types import ModelResponse
 from mini_agent.core.context import AgentContext
@@ -132,27 +133,21 @@ async def agent_loop(
                 )
                 return
 
-            # 6. 如果大模型要求调用工具：依次派发执行
-            for tc in response.tool_calls:
-                # 6.1 广播工具开始执行事件
+            # 6. 并行派发工具执行 (支持多工具并发执行与打字机式即时流式输出)
+            if len(response.tool_calls) == 1:
+                tc = response.tool_calls[0]
                 yield ToolCallStart(
                     tool_name=tc.name,
                     tool_call_id=tc.id,
                     arguments=tc.arguments,
                 )
-
-                # 6.2 在 ToolRegistry 中安全派发执行
                 res = await tool_registry.execute(tc.name, tc.arguments)
-
-                # 6.3 广播工具执行结果事件
                 yield ToolResult(
                     tool_name=tc.name,
                     tool_call_id=tc.id,
                     output=res.content,
                     is_error=res.is_error,
                 )
-
-                # 6.4 将执行结果写回上下文，让模型在下一轮循环看到 (包含多模态附图与工具元数据)
                 context.add_tool_result(
                     tool_call_id=tc.id,
                     output=res.content,
@@ -160,6 +155,54 @@ async def agent_loop(
                     tool_name=tc.name,
                     is_error=res.is_error,
                 )
+            else:
+                # 多个工具调用：广播所有 Start 事件后并发执行
+                for tc in response.tool_calls:
+                    yield ToolCallStart(
+                        tool_name=tc.name,
+                        tool_call_id=tc.id,
+                        arguments=tc.arguments,
+                    )
+
+                event_queue: asyncio.Queue = asyncio.Queue()
+                results_dict: Dict[str, Any] = {}
+
+                async def _execute_single_tool(target_tc):
+                    try:
+                        r = await tool_registry.execute(target_tc.name, target_tc.arguments)
+                    except Exception as ex:
+                        from mini_agent.tools.base import ToolResult as TR
+                        r = TR(content=f"工具执行异常: {str(ex)}", is_error=True)
+                    await event_queue.put((target_tc, r))
+
+                tasks = [asyncio.create_task(_execute_single_tool(tc)) for tc in response.tool_calls]
+
+                # 实时消费完成事件，谁先好谁先 yield
+                completed = 0
+                total_tools = len(response.tool_calls)
+                while completed < total_tools:
+                    finished_tc, res = await event_queue.get()
+                    results_dict[finished_tc.id] = (finished_tc, res)
+                    completed += 1
+                    yield ToolResult(
+                        tool_name=finished_tc.name,
+                        tool_call_id=finished_tc.id,
+                        output=res.content,
+                        is_error=res.is_error,
+                    )
+
+                await asyncio.gather(*tasks, return_exceptions=True)
+
+                # 严格按照大模型返回的原始键序将结果写回上下文 (确保与 API 协议完全一致)
+                for tc in response.tool_calls:
+                    _, res = results_dict[tc.id]
+                    context.add_tool_result(
+                        tool_call_id=tc.id,
+                        output=res.content,
+                        images=getattr(res, "images", None),
+                        tool_name=tc.name,
+                        is_error=res.is_error,
+                    )
 
         # 超过最大轮数防御机制 (避免模型死循环烧 Token)
         yield Error(message=f"已达到单次任务最大轮数限制 ({context.max_turns} 轮)。如需继续推进，可使用 /turns 提高限制或直接输入指令继续。")

@@ -215,6 +215,10 @@ class BridgeServer:
 
         try:
             if method == "session.init":
+                try:
+                    await self.agent.load_mcp()
+                except Exception:
+                    pass
                 info = self.get_session_info()
                 self.emit_response(req_id, result=info)
 
@@ -547,6 +551,10 @@ class BridgeServer:
             pass
         finally:
             self._running = False
+            try:
+                await self.agent.close_mcp()
+            except Exception:
+                pass
 
 
 def main() -> None:

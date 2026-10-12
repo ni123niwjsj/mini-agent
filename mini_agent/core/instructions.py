@@ -94,6 +94,7 @@ def build_system_prompt(workspace_dir: str, extra_rules: Optional[str] = None) -
             "<rules>\n"
             "- Be concise, direct, and accurate.\n"
             "- Use 'grep' and 'glob' for codebase search and file discovery instead of running find or grep in bash.\n"
+            "- Use 'web_search' and 'web_fetch' to search the internet and read online documentation or web pages when needed.\n"
             "- Use 'read_file', 'write_file', 'edit_file', and 'bash' to examine files, modify code, or run commands.\n"
             "- For tasks involving multiple steps, use the 'todo' tool to plan and track your steps (add, update, list).\n"
             "- Always read files in full before making edits.\n"

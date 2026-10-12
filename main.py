@@ -78,14 +78,33 @@ def parse_args():
         default=int(os.getenv("MAX_TURNS", "50")),
         help="单次任务允许的最大轮数 (默认 50，设为 0 表示不限制)",
     )
+    parser.add_argument(
+        "--mcp",
+        type=str,
+        default=None,
+        help="指定 MCP 配置文件路径 (如 mcp_servers.json，若省略则自动探测工作区配置)",
+    )
     return parser.parse_args()
 
 
 async def run_single_prompt(agent: MiniAgent, prompt: str):
     """运行单次任务"""
     display = TerminalDisplay()
-    async for event in agent.stream(prompt):
-        handle_event(display, event)
+    try:
+        await agent.load_mcp()
+        async for event in agent.stream(prompt):
+            handle_event(display, event)
+    finally:
+        await agent.close_mcp()
+
+
+async def run_repl_with_mcp(agent: MiniAgent):
+    """启动交互式 REPL 并管理 MCP 生命周期"""
+    try:
+        await agent.load_mcp()
+        await start_repl(agent)
+    finally:
+        await agent.close_mcp()
 
 
 def main():
@@ -119,6 +138,7 @@ def main():
         workspace_dir=args.dir,
         session_id=args.session,
         max_turns=args.max_turns,
+        mcp_config=args.mcp,
     )
 
     try:
@@ -127,7 +147,7 @@ def main():
             asyncio.run(run_single_prompt(agent, args.prompt))
         else:
             # 启动交互式 REPL
-            asyncio.run(start_repl(agent))
+            asyncio.run(run_repl_with_mcp(agent))
     except (KeyboardInterrupt, asyncio.CancelledError):
         pass
 

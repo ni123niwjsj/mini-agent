@@ -7,6 +7,7 @@ from mini_agent.tools.edit import EditFileTool
 from mini_agent.tools.bash import BashTool
 from mini_agent.tools.todo import TodoTool
 from mini_agent.tools.search import GrepTool, GlobTool
+from mini_agent.tools.web import WebFetchTool, WebSearchTool
 
 __all__ = [
     "BaseTool",
@@ -20,4 +21,6 @@ __all__ = [
     "TodoTool",
     "GrepTool",
     "GlobTool",
+    "WebFetchTool",
+    "WebSearchTool",
 ]
