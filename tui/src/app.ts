@@ -1,7 +1,9 @@
 import {
-  TuiMainScreen,
+  TuiAltScreen,
   ProcessTerminal,
   Container,
+  ScrollView,
+  VStack,
   Input,
   Text,
   Spacer,
@@ -19,6 +21,7 @@ import { AssistantMessageComponent } from "./components/AssistantMessage.js";
 import { FooterComponent } from "./components/Footer.js";
 import { DynamicBorder } from "./components/DynamicBorder.js";
 import { SelectDialog } from "./components/SelectDialog.js";
+import { StatusIndicatorComponent } from "./components/StatusIndicator.js";
 
 function formatSessionTree(treeData: any): string {
   const entries = treeData?.entries || {};
@@ -96,8 +99,10 @@ class DynamicInput extends Input {
 export class MiniAgentTUI {
   private client: BridgeClient;
   private terminal: ProcessTerminal;
-  private ui: TuiMainScreen;
+  private ui: TuiAltScreen;
   private chatContainer: Container;
+  private transcript: ScrollView;
+  private statusIndicator: StatusIndicatorComponent;
   private input: DynamicInput;
   private footer: FooterComponent;
 
@@ -114,22 +119,42 @@ export class MiniAgentTUI {
   constructor(client: BridgeClient) {
     this.client = client;
     this.terminal = new ProcessTerminal();
-    this.ui = new TuiMainScreen(this.terminal);
+    this.ui = new TuiAltScreen(this.terminal, false, undefined, {
+      wheelScrollLines: "auto",
+      mouse: true,
+      copyOnSelect: true,
+    });
 
     this.chatContainer = new Container();
+    this.transcript = new ScrollView(this.chatContainer, {
+      follow: "end",
+      primary: true,
+      overscroll: "chain",
+      scrollbar: "auto",
+    });
+
+    this.statusIndicator = new StatusIndicatorComponent();
     this.input = new DynamicInput({
       prompt: chalk.blue.bold("❯ "),
       placeholder: "",
     });
     this.footer = new FooterComponent();
 
-    // 组装整体组件树 (对标 Pi 的 Container 架构)
-    this.ui.addChild(this.chatContainer);
-    this.ui.addChild(new Spacer(1));
-    this.ui.addChild(new DynamicBorder());
-    this.ui.addChild(this.input);
-    this.ui.addChild(new DynamicBorder());
-    this.ui.addChild(this.footer);
+    // 组装底部固定 Dock (对标 Pi 的 AltScreen 视口 + 固定高度 Dock 架构)
+    const dock = new VStack([
+      { component: this.statusIndicator, shrink: 0, minSize: 1 },
+      { component: new DynamicBorder(), shrink: 0, minSize: 1 },
+      { component: this.input, shrink: 0, minSize: 1 },
+      { component: new DynamicBorder(), shrink: 0, minSize: 1 },
+      { component: this.footer, shrink: 0, minSize: 2 },
+    ]);
+
+    const root = new VStack([
+      { component: this.transcript, grow: 1, shrink: 1, minSize: 1 },
+      { component: dock, grow: 0, shrink: 0, minSize: 6 },
+    ]);
+
+    this.ui.setLayoutRoot(root);
 
     this.setupEventHandlers();
   }
@@ -143,6 +168,7 @@ export class MiniAgentTUI {
     this.client.on("agent.start", () => {
       this.isWorking = true;
       this.startTimer();
+      this.statusIndicator.setThinking(0);
       this.input.setPromptAndPlaceholder(
         chalk.magenta.bold("⚡ [实时任务引导] "),
         ""
@@ -162,8 +188,10 @@ export class MiniAgentTUI {
       }
       if (params.is_reasoning) {
         this.currentAssistantMsg.appendReasoning(params.content, this.elapsedSec);
+        this.statusIndicator.setThinking(this.elapsedSec);
       } else {
         this.currentAssistantMsg.appendText(params.content, this.elapsedSec);
+        this.statusIndicator.setGenerating(this.elapsedSec);
       }
       this.ui.requestRender();
     });
@@ -175,20 +203,29 @@ export class MiniAgentTUI {
           tool_call_id: params.tool_call_id,
           arguments: params.arguments,
         });
-        this.ui.requestRender();
       }
+      const target =
+        params.arguments?.path ||
+        params.arguments?.file_path ||
+        params.arguments?.target_file ||
+        params.arguments?.command ||
+        "";
+      this.statusIndicator.setTool(params.tool_name, String(target));
+      this.ui.requestRender();
     });
 
     this.client.on("tool.result", (params: any) => {
       if (this.currentAssistantMsg) {
         this.currentAssistantMsg.updateToolResult(params.tool_call_id, params.output, params.is_error);
-        this.ui.requestRender();
       }
+      this.statusIndicator.setGenerating(this.elapsedSec);
+      this.ui.requestRender();
     });
 
     this.client.on("agent.end", (params: any) => {
       this.isWorking = false;
       this.stopTimer();
+      this.statusIndicator.setIdle();
       this.input.setPromptAndPlaceholder(
         chalk.blue.bold("❯ "),
         ""
@@ -207,6 +244,7 @@ export class MiniAgentTUI {
     });
 
     this.client.on("agent.steered", (params: { guidance: string }) => {
+      this.statusIndicator.setSteered(params.guidance);
       this.chatContainer.addChild(
         new Text(chalk.green(`✔ 已注入动态引导: "${params.guidance}"`), 1, 0)
       );
@@ -216,6 +254,7 @@ export class MiniAgentTUI {
     this.client.on("agent.error", (params: { message: string }) => {
       this.isWorking = false;
       this.stopTimer();
+      this.statusIndicator.setError(params.message);
       this.input.setPromptAndPlaceholder(
         chalk.blue.bold("❯ "),
         ""
@@ -231,9 +270,8 @@ export class MiniAgentTUI {
     const start = Date.now();
     this.timer = setInterval(() => {
       this.elapsedSec = Math.floor((Date.now() - start) / 1000);
-      if (this.currentAssistantMsg) {
-        this.ui.requestRender();
-      }
+      this.statusIndicator.updateElapsed(this.elapsedSec);
+      this.ui.requestRender();
     }, 1000);
   }
 
@@ -242,6 +280,7 @@ export class MiniAgentTUI {
       clearInterval(this.timer);
       this.timer = null;
     }
+    this.statusIndicator.setIdle();
   }
 
   private replaySessionHistory(messages: ChatMessage[], sessionId: string) {
@@ -713,6 +752,7 @@ export class MiniAgentTUI {
 
     this.isWorking = true;
     this.startTimer();
+    this.statusIndicator.setThinking(0);
     this.input.setPromptAndPlaceholder(
       chalk.magenta.bold("⚡ [实时任务引导] "),
       ""
@@ -724,6 +764,7 @@ export class MiniAgentTUI {
     } catch (err: any) {
       this.isWorking = false;
       this.stopTimer();
+      this.statusIndicator.setError(err.message);
       this.input.setPromptAndPlaceholder(
         chalk.blue.bold("❯ "),
         ""
