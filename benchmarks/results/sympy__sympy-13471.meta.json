@@ -1,0 +1,34 @@
+{
+  "instance_id": "sympy__sympy-13471",
+  "status": "SUCCESS",
+  "duration_seconds": 64.67336058616638,
+  "turns": 11,
+  "tool_calls": [
+    "bash",
+    "grep",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "web_search",
+    "bash",
+    "bash",
+    "bash",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-13471.patch",
+  "patch_content": "diff --git a/sympy/core/numbers.py b/sympy/core/numbers.py\nindex 7bc96e68eb..5911a6b73b 100644\n--- a/sympy/core/numbers.py\n+++ b/sympy/core/numbers.py\n@@ -1042,6 +1042,10 @@ def __new__(cls, num, dps=None, prec=None, precision=None):\n                 # it's a hexadecimal (coming from a pickled object)\n                 # assume that it is in standard form\n                 num = list(num)\n+                # long uses a shim for int on Python 3, so we need to\n+                # remove any trailing 'L' on the num[1] string\n+                if num[1].endswith('L'):\n+                    num[1] = num[1][:-1]\n                 num[1] = long(num[1], 16)\n                 _mpf_ = tuple(num)\n             else:\n",
+  "error_message": null,
+  "agent_summary": "The fix is applied and verified.\n\n## Summary\n\n**Root cause:** When sympy expressions containing floats are pickled in Python 2, the `long` mantissa inside the `mpf` tuple is serialized as a hexadecimal string with a trailing `L` suffix (e.g. `'1L'`). On Python 3, sympy's compatibility shim maps `long` to `int`, and `int('1L', 16)` raises `ValueError: invalid literal for int() with base 16: '1L'`.\n\n**Fix:** In `sympy/core/numbers.py`, in `Float.__new__` where a hexadecimal string from a pickled object is converted, strip any trailing `'L'` before calling `long(num[1], 16)`:\n\n```python\nnum = list(num)\n# long uses a shim for int on Python 3, so we need to\n# remove any trailing 'L' on the num[1] string\nif num[1].endswith('L'):\n    num[1] = num[1][:-1]\nnum[1] = long(num[1], 16)\n_mpf_ = tuple(num)\n```\n\nThis is backward compatible: on Python 2 `long('1L', 16)` would actually fail, so stripping the suffix makes the path work on both versions, while non-`L` strings are unaffected."
+}

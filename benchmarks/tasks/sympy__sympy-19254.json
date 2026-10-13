@@ -1,0 +1,33 @@
+{
+  "instance_id": "sympy__sympy-19254",
+  "repo_name": "sympy_repo",
+  "official_repo": "sympy/sympy",
+  "base_commit": "e0ef1da13e2ab2a77866c05246f73c871ca9388c",
+  "version": "1.7",
+  "problem_statement": "sympy.polys.factortools.dmp_zz_mignotte_bound improvement\nThe method `dup_zz_mignotte_bound(f, K)` can be significantly improved by using the **Knuth-Cohen bound** instead. After our research with Prof. Ag.Akritas we have implemented the Knuth-Cohen bound among others, and compare them among dozens of polynomials with different degree, density and coefficients range. Considering the results and the feedback from Mr.Kalevi Suominen, our proposal is that the mignotte_bound should be replaced by the knuth-cohen bound.\r\nAlso, `dmp_zz_mignotte_bound(f, u, K)` for mutli-variants polynomials should be replaced appropriately.\n",
+  "hints_text": "",
+  "test_patch": "diff --git a/sympy/polys/tests/test_factortools.py b/sympy/polys/tests/test_factortools.py\n--- a/sympy/polys/tests/test_factortools.py\n+++ b/sympy/polys/tests/test_factortools.py\n@@ -27,7 +27,8 @@ def test_dmp_trial_division():\n \n def test_dup_zz_mignotte_bound():\n     R, x = ring(\"x\", ZZ)\n-    assert R.dup_zz_mignotte_bound(2*x**2 + 3*x + 4) == 32\n+    assert R.dup_zz_mignotte_bound(2*x**2 + 3*x + 4) == 6\n+    assert R.dup_zz_mignotte_bound(x**3 + 14*x**2 + 56*x + 64) == 152\n \n \n def test_dmp_zz_mignotte_bound():\n",
+  "FAIL_TO_PASS": [
+    "test_dup_zz_mignotte_bound"
+  ],
+  "PASS_TO_PASS": [
+    "test_dup_trial_division",
+    "test_dmp_trial_division",
+    "test_dmp_zz_mignotte_bound",
+    "test_dup_zz_hensel_step",
+    "test_dup_zz_hensel_lift",
+    "test_dup_zz_irreducible_p",
+    "test_dup_cyclotomic_p",
+    "test_dup_zz_cyclotomic_poly",
+    "test_dup_zz_cyclotomic_factor",
+    "test_dup_zz_factor",
+    "test_dmp_zz_wang",
+    "test_issue_6355",
+    "test_dmp_zz_factor",
+    "test_dup_ext_factor",
+    "test_dmp_ext_factor",
+    "test_dup_factor_list",
+    "test_dmp_factor_list",
+    "test_dup_irreducible_p"
+  ]
+}

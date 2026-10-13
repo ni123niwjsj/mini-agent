@@ -1,0 +1,33 @@
+{
+  "instance_id": "sympy__sympy-15345",
+  "status": "SUCCESS",
+  "duration_seconds": 70.87616896629333,
+  "turns": 14,
+  "tool_calls": [
+    "grep",
+    "grep",
+    "read_file",
+    "bash",
+    "grep",
+    "grep",
+    "grep",
+    "read_file",
+    "bash",
+    "bash",
+    "grep",
+    "grep",
+    "read_file",
+    "edit_file",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-15345.patch",
+  "patch_content": "diff --git a/sympy/printing/mathematica.py b/sympy/printing/mathematica.py\nindex ea7e3a2d94..2572441dcd 100644\n--- a/sympy/printing/mathematica.py\n+++ b/sympy/printing/mathematica.py\n@@ -116,6 +116,12 @@ def _print_Derivative(self, expr):\n         dvars = [i[0] if i[1] == 1 else i for i in expr.variable_count]\n         return \"Hold[D[\" + ', '.join(self.doprint(a) for a in [dexpr] + dvars) + \"]]\"\n \n+    def _print_Min(self, expr):\n+        return \"Min[%s]\" % self.stringify(expr.args, \", \")\n+\n+    def _print_Max(self, expr):\n+        return \"Max[%s]\" % self.stringify(expr.args, \", \")\n+\n \n def mathematica_code(expr, **settings):\n     r\"\"\"Converts an expr to a string of the Wolfram Mathematica code\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete and verified.\n\n## Summary\n\n**Root cause:** The Mathematica code printer (`MCodePrinter` in `sympy/printing/mathematica.py`) had no special handling for `Min`/`Max`. These classes derive from `LatticeOp`, and the inherited `StrPrinter._print_LatticeOp` (used via `doprint = StrPrinter.doprint`) emits Python-style syntax `Max(2, x)` with parentheses, which is not valid Mathematica (Mathematica uses brackets: `Max[2, x]`).\n\n**Fix:** Added explicit `_print_Min` and `_print_Max` methods to `MCodePrinter` that emit Mathematica bracket syntax:\n\n```python\ndef _print_Min(self, expr):\n    return \"Min[%s]\" % self.stringify(expr.args, \", \")\n\ndef _print_Max(self, expr):\n    return \"Max[%s]\" % self.stringify(expr.args, \", \")\n```\n\n**Verification:**\n- `mathematica_code(Max(x, 2))` → `'Max[2, x]'` (valid Mathematica)\n- `mathematica_code(Min(x, 2))` → `'Min[2, x]'`\n- `mathematica_code(Max(x, 2, 3))` → `'Max[3, x]'`\n- `mathematica_code(Max(x, 2*y))` → `'Max[x, 2*y]'`\n\nThe change is minimal, only touches the source printer, and adds no test modifications."
+}

@@ -1,0 +1,31 @@
+{
+  "instance_id": "sympy__sympy-24066",
+  "status": "SUCCESS",
+  "duration_seconds": 106.63023662567139,
+  "turns": 13,
+  "tool_calls": [
+    "grep",
+    "read_file",
+    "bash",
+    "grep",
+    "read_file",
+    "bash",
+    "bash",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-24066.patch",
+  "patch_content": "diff --git a/sympy/physics/units/unitsystem.py b/sympy/physics/units/unitsystem.py\nindex 3daf84c108..10f789a246 100644\n--- a/sympy/physics/units/unitsystem.py\n+++ b/sympy/physics/units/unitsystem.py\n@@ -192,8 +192,9 @@ def _collect_factor_and_dimension(self, expr):\n         elif isinstance(expr, Function):\n             fds = [self._collect_factor_and_dimension(\n                 arg) for arg in expr.args]\n-            return (expr.func(*(f[0] for f in fds)),\n-                    *(d[1] for d in fds))\n+            dimensions = [Dimension(1) if self.get_dimension_system().is_dimensionless(\n+                d[1]) else d[1] for d in fds]\n+            return (expr.func(*(f[0] for f in fds)), *dimensions)\n         elif isinstance(expr, Dimension):\n             return S.One, expr\n         else:\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete and matches the minimal upstream approach.\n\n## Summary\n\n**Root cause:** In `sympy/physics/units/unitsystem.py`, the `Function` branch of `_collect_factor_and_dimension` returned each argument's dimension verbatim as the function's dimension. For `exp(second/(farad*ohm))`, the argument's dimension is `Dimension(time/(capacitance*impedance))` — which *is* dimensionless, but is not literally `Dimension(1)`. When this was added to `100` (dimension `Dimension(1)`) in the `Add` branch, the exact `dim != addend_dim` comparison failed and raised `ValueError`.\n\n**Fix:** In the `Function` branch, normalize any dimensionally-dimensionless argument dimension to `Dimension(1)` using `is_dimensionless()` before returning:\n\n```python\nelif isinstance(expr, Function):\n    fds = [self._collect_factor_and_dimension(arg) for arg in expr.args]\n    dimensions = [Dimension(1) if self.get_dimension_system().is_dimensionless(\n        d[1]) else d[1] for d in fds]\n    return (expr.func(*(f[0] for f in fds)), *dimensions)\n```\n\nThis makes `exp(...)` correctly report a dimensionless result, resolving the mismatch. Existing behavior is preserved for genuinely dimensional function arguments (they still raise, e.g. `check_unit_consistency(1 - exp(u / w))`). The 2 failing tests in the suite are pre-existing (they also fail on the unmodified code) and unrelated."
+}

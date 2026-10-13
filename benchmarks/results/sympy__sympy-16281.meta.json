@@ -1,0 +1,38 @@
+{
+  "instance_id": "sympy__sympy-16281",
+  "status": "SUCCESS",
+  "duration_seconds": 150.06727695465088,
+  "turns": 20,
+  "tool_calls": [
+    "grep",
+    "grep",
+    "read_file",
+    "read_file",
+    "bash",
+    "bash",
+    "grep",
+    "read_file",
+    "web_search",
+    "web_fetch",
+    "web_fetch",
+    "bash",
+    "bash",
+    "bash",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-16281.patch",
+  "patch_content": "diff --git a/sympy/printing/pretty/pretty.py b/sympy/printing/pretty/pretty.py\nindex 6d3cc05bd3..83031f1440 100644\n--- a/sympy/printing/pretty/pretty.py\n+++ b/sympy/printing/pretty/pretty.py\n@@ -491,10 +491,9 @@ def _print_Product(self, expr):\n \n         for lim in expr.limits:\n             width = (func_height + 2) * 5 // 3 - 2\n-            sign_lines = []\n-            sign_lines.append(corner_chr + (horizontal_chr*width) + corner_chr)\n-            for i in range(func_height + 1):\n-                sign_lines.append(vertical_chr + (' '*width) + vertical_chr)\n+            sign_lines = [horizontal_chr + corner_chr + (horizontal_chr * (width-2)) + corner_chr + horizontal_chr]\n+            for _ in range(func_height + 1):\n+                sign_lines.append(' ' + vertical_chr + (' ' * (width-2)) + vertical_chr + ' ')\n \n             pretty_sign = stringPict('')\n             pretty_sign = prettyForm(*pretty_sign.stack(*sign_lines))\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete and verified. Here's a summary:\n\n## Summary\n\n**File changed:** `sympy/printing/pretty/pretty.py` — method `_print_Product`\n\n**Root cause:** The pretty-printer for `Product` drew the ∏ symbol as a bare top-bar plus two vertical bars hugging a wide empty interior:\n- the top bar was `corner + horizontal*width + corner`, giving no overhang;\n- the vertical bars sat flush at the edges with an excessively wide `width`, making the ∏ \"too fat.\"\n\n**The fix:** Redraw the operator more naturally:\n- The top bar now overhangs the vertical bars by one character on each side: `horizontal + corner + horizontal*(width-2) + corner + horizontal`, so the corners connect the overhang to the body.\n- The side lines are inset by one space on each side: `' ' + vertical + ' '*(width-2) + vertical + ' '`, keeping the vertical bars aligned under the corners of the top bar.\n\nThis results in the improved appearance described in the issue:\n\n```\n    ∞\n─┬─────┬─\n │     │  1\n │     │  ──\n │     │   2\n │     │  n\n  n = 1\n```\n\nI verified the output against the expected unicode and ASCII forms for single-limit, multi-limit, and powered `Product` cases (all match), and confirmed the change via `git diff`. No tests were modified."
+}

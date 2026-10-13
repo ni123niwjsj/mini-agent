@@ -1,0 +1,31 @@
+{
+  "instance_id": "sympy__sympy-20154",
+  "status": "SUCCESS",
+  "duration_seconds": 142.50420308113098,
+  "turns": 15,
+  "tool_calls": [
+    "grep",
+    "read_file",
+    "read_file",
+    "edit_file",
+    "edit_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "grep",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-20154.patch",
+  "patch_content": "diff --git a/sympy/utilities/iterables.py b/sympy/utilities/iterables.py\nindex dd36dea304..bb8c47122e 100644\n--- a/sympy/utilities/iterables.py\n+++ b/sympy/utilities/iterables.py\n@@ -1738,19 +1738,9 @@ def partitions(n, m=None, k=None, size=False):\n     {2: 1, 4: 1}\n     {3: 2}\n \n-    Note that the _same_ dictionary object is returned each time.\n-    This is for speed:  generating each partition goes quickly,\n-    taking constant time, independent of n.\n-\n-    >>> [p for p in partitions(6, k=2)]\n-    [{1: 6}, {1: 6}, {1: 6}, {1: 6}]\n-\n-    If you want to build a list of the returned dictionaries then\n-    make a copy of them:\n-\n-    >>> [p.copy() for p in partitions(6, k=2)]  # doctest: +SKIP\n+    >>> [p for p in partitions(6, k=2)]  # doctest: +SKIP\n     [{2: 3}, {1: 2, 2: 2}, {1: 4, 2: 1}, {1: 6}]\n-    >>> [(M, p.copy()) for M, p in partitions(6, k=2, size=True)]  # doctest: +SKIP\n+    >>> [(M, p) for M, p in partitions(6, k=2, size=True)]  # doctest: +SKIP\n     [(3, {2: 3}), (4, {1: 2, 2: 2}), (5, {1: 4, 2: 1}), (6, {1: 6})]\n \n     References\n@@ -1802,9 +1792,9 @@ def partitions(n, m=None, k=None, size=False):\n         keys.append(r)\n     room = m - q - bool(r)\n     if size:\n-        yield sum(ms.values()), ms\n+        yield sum(ms.values()), ms.copy()\n     else:\n-        yield ms\n+        yield ms.copy()\n \n     while keys != [1]:\n         # Reuse any 1's.\n@@ -1842,9 +1832,9 @@ def partitions(n, m=None, k=None, size=False):\n             break\n         room -= need\n         if size:\n-            yield sum(ms.values()), ms\n+            yield sum(ms.values()), ms.copy()\n         else:\n-            yield ms\n+            yield ms.copy()\n \n \n def ordered_partitions(n, m=None, sort=True):\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\n**Root cause:** The `partitions()` generator in `sympy/utilities/iterables.py` yielded the *same mutable dictionary object* (`ms`) on every iteration, mutating it in place between yields. This made `list(partitions(...))` produce apparently wrong results (all entries showing the final state), and led to subtle aliasing bugs when the partitions were consumed or stored.\n\n**Fix:** Yield a copy of the working dictionary instead of the dictionary itself:\n- Changed `yield ms` → `yield ms.copy()` (two non-size yield sites).\n- Changed `yield sum(ms.values()), ms` → `yield sum(ms.values()), ms.copy()` (two `size=True` yield sites).\n\nThis is a clean minimal change — the internal algorithm still mutates `ms` for speed, but each yielded result is now an independent snapshot, so all yielded dictionaries remain distinct and correct.\n\n**Docstring update:** Removed the caveat documenting the shared-dictionary behavior and the `p.copy()` workarounds, replacing the examples with the now-correct direct usage (`[p for p in partitions(6, k=2)]` and `[(M, p) for M, p in partitions(6, k=2, size=True)]`).\n\n**Verification:**\n- `list(partitions(6, k=2))` → `[{2: 3}, {2: 2, 1: 2}, {2: 1, 1: 4}, {1: 6}]` (all distinct/correct).\n- `size=True` variant returns independent `(M, P)` pairs.\n- Edge cases (`n<=0`, `m*k<n`) still yield `{}`/`(0, {})`.\n- `test_iterables.py -k partition` passes (43 passed); existing callers in `multiset_partitions` only read `p`, so they are unaffected.\n\nPer instructions, I did not modify tests or commit changes."
+}

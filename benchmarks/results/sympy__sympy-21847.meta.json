@@ -1,0 +1,36 @@
+{
+  "instance_id": "sympy__sympy-21847",
+  "status": "SUCCESS",
+  "duration_seconds": 778.8147134780884,
+  "turns": 14,
+  "tool_calls": [
+    "grep",
+    "bash",
+    "read_file",
+    "read_file",
+    "bash",
+    "read_file",
+    "read_file",
+    "bash",
+    "read_file",
+    "bash",
+    "read_file",
+    "web_search",
+    "bash",
+    "edit_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-21847.patch",
+  "patch_content": "diff --git a/sympy/polys/monomials.py b/sympy/polys/monomials.py\nindex 0e84403307..d2cd3451e5 100644\n--- a/sympy/polys/monomials.py\n+++ b/sympy/polys/monomials.py\n@@ -127,7 +127,7 @@ def itermonomials(variables, max_degrees, min_degrees=None):\n                 for variable in item:\n                     if variable != 1:\n                         powers[variable] += 1\n-                if max(powers.values()) >= min_degree:\n+                if sum(powers.values()) >= min_degree:\n                     monomials_list_comm.append(Mul(*item))\n             yield from set(monomials_list_comm)\n         else:\n@@ -139,7 +139,7 @@ def itermonomials(variables, max_degrees, min_degrees=None):\n                 for variable in item:\n                     if variable != 1:\n                         powers[variable] += 1\n-                if max(powers.values()) >= min_degree:\n+                if sum(powers.values()) >= min_degree:\n                     monomials_list_non_comm.append(Mul(*item))\n             yield from set(monomials_list_non_comm)\n     else:\n",
+  "error_message": null,
+  "agent_summary": "The heurisch failure is pre-existing and unrelated (an XFail test marker issue present before my change).\n\n## Summary\n\n**Root cause:** In `sympy/polys/monomials.py`, the `itermonomials` function, when given an integer `min_degree`, filtered candidate monomials using `max(powers.values()) >= min_degree`. This checks the *largest single-variable exponent* rather than the *total degree* (`sum(powers.values())`). Consequently, when `min_degree` was set, only monomials where one variable reached that exponent (e.g. `x1**3`, `x2**3`, `x3**3`) qualified, while valid mixed monomials of the same total degree (e.g. `x1*x2**2`, `x1*x2*x3`) were dropped — contradicting the documented behavior `min_degree <= total_degree(monom) <= max_degree`.\n\n**Fix:** Replaced `max(powers.values())` with `sum(powers.values())` in both the commutative and non-commutative branches of the total-degree code path (2 lines changed).\n\n**Verification:** The reported example now returns all 10 total-degree-3 monomials, and the existing `test_monomials` suite (11 tests) passes fully. The only heurisch failure is pre-existing on the unmodified tree."
+}

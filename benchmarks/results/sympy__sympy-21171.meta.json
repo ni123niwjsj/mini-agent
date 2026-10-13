@@ -1,0 +1,43 @@
+{
+  "instance_id": "sympy__sympy-21171",
+  "status": "SUCCESS",
+  "duration_seconds": 140.7747995853424,
+  "turns": 22,
+  "tool_calls": [
+    "grep",
+    "grep",
+    "read_file",
+    "read_file",
+    "read_file",
+    "edit_file",
+    "grep",
+    "bash",
+    "grep",
+    "bash",
+    "read_file",
+    "grep",
+    "bash",
+    "read_file",
+    "web_search",
+    "bash",
+    "bash",
+    "bash",
+    "web_fetch",
+    "web_fetch",
+    "web_fetch",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-21171.patch",
+  "patch_content": "diff --git a/sympy/printing/latex.py b/sympy/printing/latex.py\nindex 43f9e6ad8d..e9d404021e 100644\n--- a/sympy/printing/latex.py\n+++ b/sympy/printing/latex.py\n@@ -1968,10 +1968,12 @@ def _print_DiracDelta(self, expr, exp=None):\n             tex = r\"\\left(%s\\right)^{%s}\" % (tex, exp)\n         return tex\n \n-    def _print_SingularityFunction(self, expr):\n+    def _print_SingularityFunction(self, expr, exp=None):\n         shift = self._print(expr.args[0] - expr.args[1])\n         power = self._print(expr.args[2])\n         tex = r\"{\\left\\langle %s \\right\\rangle}^{%s}\" % (shift, power)\n+        if exp is not None:\n+            tex = r\"{\\left({\\langle %s \\rangle}^{%s}\\right)}^{%s}\" % (shift, power, exp)\n         return tex\n \n     def _print_Heaviside(self, expr, exp=None):\n",
+  "error_message": null,
+  "agent_summary": "The 4 \"failures\" are pre-existing `XFail` exceptions from sympy's custom test framework (pytest doesn't natively handle them), unrelated to my change.\n\n## Summary\n\n**Root cause:** `LatexPrinter._print_Pow` (in `sympy/printing/latex.py`) special-cases bases that are `Function` instances by calling `self._print(expr.base, exp=self._print(expr.exp))`. When the base is a `SingularityFunction`, the printer dispatches to `_print_SingularityFunction`, which did not accept the `exp` keyword argument — hence the `TypeError`.\n\n**Fix:** In `sympy/printing/latex.py`, updated `_print_SingularityFunction` to accept an optional `exp=None` parameter and wrap the singularity expression in parentheses with the outer exponent when one is supplied, consistent with other function printers:\n\n```python\ndef _print_SingularityFunction(self, expr, exp=None):\n    shift = self._print(expr.args[0] - expr.args[1])\n    power = self._print(expr.args[2])\n    tex = r\"{\\left\\langle %s \\right\\rangle}^{%s}\" % (shift, power)\n    if exp is not None:\n        tex = r\"{\\left({\\langle %s \\rangle}^{%s}\\right)}^{%s}\" % (shift, power, exp)\n    return tex\n```\n\nI verified `latex(b2.shear_force())` now renders successfully for the reported Beam scenario, and existing/expected latex outputs for `SingularityFunction` powers match the reference behavior. No tests were modified."
+}

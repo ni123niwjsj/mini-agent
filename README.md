@@ -207,7 +207,7 @@ npm run tui:build
 
 Mini-Agent 集成了对齐国际顶级代码智能体评测基准 **SWE-bench Lite** 的官方评测套件，并支持在官方 **Docker 容器沙箱** 中自动化运行评估。
 
-目前已在真实知名开源仓库（`pallets/flask`、`astropy/astropy`、`mwaskom/seaborn`、`psf/requests`、`pylint-dev/pylint` 与 `pytest-dev/pytest`）完成 **42 道官方真题** 的全闭环评测与补丁提取，累计取得 **88.1% (37/42)** 官方 PR 关键逻辑吻合与有效解决率，并斩获 **12 道与官方 PR 提交代码逐字 100% 完全一致题**：
+目前已在真实知名开源仓库（`sympy/sympy`、`pytest-dev/pytest`、`pylint-dev/pylint`、`psf/requests`、`mwaskom/seaborn`、`astropy/astropy` 与 `pallets/flask`）完成 **112 道官方真题** 的全闭环评测与补丁提取，有效补丁产出率 **85.7% (96/112)**，官方 PR 关键逻辑吻合与有效解决率 **76.8% (86/112)**，并斩获 **46 道与官方 PR 提交代码逐字 100% 完全一致题**：
 
 #### 1. Flask & Astropy 核心基准集 (9 题)
 - **官方评测结果**: **77.8% (7/9)** 官方完全解决率 (Resolved Rate)。
@@ -270,11 +270,56 @@ Mini-Agent 集成了对齐国际顶级代码智能体评测基准 **SWE-bench Li
 | `pytest-dev/pytest` | `pytest-dev__pytest-8906` | ✅ 逻辑高度吻合 | 97.1% | 10 轮 | 48.9s |
 | `pytest-dev/pytest` | `pytest-dev__pytest-9359` | ✅ 逻辑高度吻合 | 91.1% | 22 轮 | 277.9s |
 
-#### 4. 全量评测报告与补丁归档
-- **Pylint & Pytest 专项战报**：[`benchmarks/results/report_pylint_pytest.md`](benchmarks/results/report_pylint_pytest.md)
-- **Seaborn & Requests 专项战报**：[`benchmarks/results/report_seaborn_requests.md`](benchmarks/results/report_seaborn_requests.md)
-- **Flask & Astropy 核心战报**：[`benchmarks/results/report.md`](benchmarks/results/report.md)
-- **官方评测预测全集**：[`benchmarks/results/predictions.jsonl`](benchmarks/results/predictions.jsonl) (汇聚全部 42 道官方标准补丁)
+#### 4. SymPy 专项扩展集 (70 题)
+- **有效补丁产出率**: **78.6% (55/70)**；
+- **官方 PR 逻辑吻合与有效解决率**: **70.0% (49/70)**；
+- **100% 字节级完全一致**: 斩获 **34 道题** 与官方 PR 提交代码逐字完全相同（含复杂数学符号计算、AST 抽象语法树解析、矩阵微分等高难度场景）。
+
+| 仓库 / 领域 | 题目 ID | 官方 PR 一致性 | 代码吻合率 | 轮数 | 耗时 | 补丁大小 |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| `sympy/sympy` | `sympy__sympy-11400` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 137.7s | 25 行 |
+| `sympy/sympy` | `sympy__sympy-12481` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 226.2s | 19 行 |
+| `sympy/sympy` | `sympy__sympy-13043` | 🎯 **100% 逐字吻合** | **100.0%** | 18 轮 | 122.7s | 29 行 |
+| `sympy/sympy` | `sympy__sympy-13146` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 138.6s | 26 行 |
+| `sympy/sympy` | `sympy__sympy-13177` | 🎯 **100% 逐字吻合** | **100.0%** | 11 轮 | 63.5s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-13480` | 🎯 **100% 逐字吻合** | **100.0%** | 5 轮 | 20.5s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-13647` | 🎯 **100% 逐字吻合** | **100.0%** | 16 轮 | 108.2s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-13915` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 155.5s | 16 行 |
+| `sympy/sympy` | `sympy__sympy-14308` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 146.5s | 62 行 |
+| `sympy/sympy` | `sympy__sympy-14396` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 144.2s | 26 行 |
+| `sympy/sympy` | `sympy__sympy-14774` | 🎯 **100% 逐字吻合** | **100.0%** | 6 轮 | 25.5s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-15678` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 253.4s | 26 行 |
+| `sympy/sympy` | `sympy__sympy-16106` | 🎯 **100% 逐字吻合** | **100.0%** | 20 轮 | 150.6s | 31 行 |
+| `sympy/sympy` | `sympy__sympy-16281` | 🎯 **100% 逐字吻合** | **100.0%** | 20 轮 | 150.1s | 18 行 |
+| `sympy/sympy` | `sympy__sympy-16988` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 220.5s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-17022` | 🎯 **100% 逐字吻合** | **100.0%** | 18 轮 | 124.3s | 18 行 |
+| `sympy/sympy` | `sympy__sympy-17139` | 🎯 **100% 逐字吻合** | **100.0%** | 10 轮 | 92.6s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-18057` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 213.3s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-18087` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 195.1s | 34 行 |
+| `sympy/sympy` | `sympy__sympy-18189` | 🎯 **100% 逐字吻合** | **100.0%** | 10 轮 | 144.9s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-18532` | 🎯 **100% 逐字吻合** | **100.0%** | 21 轮 | 234.0s | 21 行 |
+| `sympy/sympy` | `sympy__sympy-18621` | 🎯 **100% 逐字吻合** | **100.0%** | 11 轮 | 69.6s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-18835` | 🎯 **100% 逐字吻合** | **100.0%** | 9 轮 | 80.8s | 48 行 |
+| `sympy/sympy` | `sympy__sympy-19007` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 168.9s | 42 行 |
+| `sympy/sympy` | `sympy__sympy-19487` | 🎯 **100% 逐字吻合** | **100.0%** | 16 轮 | 101.4s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-20212` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 172.6s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-20442` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 203.3s | 23 行 |
+| `sympy/sympy` | `sympy__sympy-21171` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 140.8s | 18 行 |
+| `sympy/sympy` | `sympy__sympy-21627` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 234.3s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-21847` | 🎯 **100% 逐字吻合** | **100.0%** | 14 轮 | 778.8s | 22 行 |
+| `sympy/sympy` | `sympy__sympy-22005` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 246.1s | 17 行 |
+| `sympy/sympy` | `sympy__sympy-22714` | 🎯 **100% 逐字吻合** | **100.0%** | 14 轮 | 108.2s | 13 行 |
+| `sympy/sympy` | `sympy__sympy-22840` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 220.0s | 24 行 |
+| `sympy/sympy` | `sympy__sympy-23191` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 234.7s | 40 行 |
+| `sympy/sympy` | `sympy__sympy-14317` | ✅ 逻辑高度吻合 | 99.8% | 20 轮 | 125.0s | 55 行 |
+| `sympy/sympy` | `sympy__sympy-19254` | ✅ 逻辑高度吻合 | 97.3% | 22 轮 | 175.0s | 74 行 |
+
+#### 5. 全量评测报告与补丁归档
+- **SymPy 专项战报 (70 题)**：[`benchmarks/results/report_sympy.md`](benchmarks/results/report_sympy.md)
+- **Pylint & Pytest 专项战报 (23 题)**：[`benchmarks/results/report_pylint_pytest.md`](benchmarks/results/report_pylint_pytest.md)
+- **Seaborn & Requests 专项战报 (10 题)**：[`benchmarks/results/report_seaborn_requests.md`](benchmarks/results/report_seaborn_requests.md)
+- **Flask & Astropy 核心战报 (9 题)**：[`benchmarks/results/report.md`](benchmarks/results/report.md)
+- **官方评测预测全集**：[`benchmarks/results/predictions.jsonl`](benchmarks/results/predictions.jsonl) (汇聚全部 112 道官方标准补丁)
 - **生成的 Git 统一补丁目录**：[`benchmarks/results/patches/`](benchmarks/results/patches/)
 - **Docker 容器执行日志**：[`logs/run_evaluation/mini_agent_official/`](logs/run_evaluation/mini_agent_official/)
 

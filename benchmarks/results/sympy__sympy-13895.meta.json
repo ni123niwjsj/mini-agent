@@ -1,0 +1,39 @@
+{
+  "instance_id": "sympy__sympy-13895",
+  "status": "ERROR",
+  "duration_seconds": 148.94507265090942,
+  "turns": 22,
+  "tool_calls": [
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "read_file",
+    "read_file",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-13895.patch",
+  "patch_content": "diff --git a/sympy/core/basic.py b/sympy/core/basic.py\nindex d4ca323e0d..b42fd1d75c 100644\n--- a/sympy/core/basic.py\n+++ b/sympy/core/basic.py\n@@ -1,6 +1,7 @@\n \"\"\"Base class for all the objects in SymPy\"\"\"\n from __future__ import print_function, division\n-from collections import Mapping, defaultdict\n+from collections.abc import Mapping\n+from collections import defaultdict\n from itertools import chain\n \n from .assumptions import BasicMeta, ManagedProperties\n",
+  "error_message": "已达到单次任务最大轮数限制 (22 轮)。如需继续推进，可使用 /turns 提高限制或直接输入指令继续。",
+  "agent_summary": "任务达到最大轮数限制，已暂停。"
+}

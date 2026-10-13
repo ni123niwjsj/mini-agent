@@ -1,0 +1,30 @@
+{
+  "instance_id": "sympy__sympy-13437",
+  "repo_name": "sympy_repo",
+  "official_repo": "sympy/sympy",
+  "base_commit": "674afc619d7f5c519b6a5393a8b0532a131e57e0",
+  "version": "1.1",
+  "problem_statement": "bell(n).limit(n, oo) should be oo rather than bell(oo)\n`bell(n).limit(n,oo)` should take the value infinity, but the current output is `bell(oo)`. As the Bell numbers represent the number of partitions of a set, it seems natural that `bell(oo)` should be able to be evaluated rather than be returned unevaluated. This issue is also in line with the recent fixes to the corresponding limit for the Fibonacci numbers and Lucas numbers.\n\n```\nfrom sympy import *\nn = symbols('n')\nbell(n).limit(n,oo)\n\nOutput:\nbell(oo)\n```\n\nI'm new to Sympy, so I'd appreciate the opportunity to fix this bug myself if that's alright.\n\n",
+  "hints_text": "",
+  "test_patch": "diff --git a/sympy/functions/combinatorial/tests/test_comb_numbers.py b/sympy/functions/combinatorial/tests/test_comb_numbers.py\n--- a/sympy/functions/combinatorial/tests/test_comb_numbers.py\n+++ b/sympy/functions/combinatorial/tests/test_comb_numbers.py\n@@ -73,6 +73,11 @@ def test_bell():\n     assert bell(1, x) == x\n     assert bell(2, x) == x**2 + x\n     assert bell(5, x) == x**5 + 10*x**4 + 25*x**3 + 15*x**2 + x\n+    assert bell(oo) == S.Infinity\n+    raises(ValueError, lambda: bell(oo, x))\n+\n+    raises(ValueError, lambda: bell(-1))\n+    raises(ValueError, lambda: bell(S(1)/2))\n \n     X = symbols('x:6')\n     # X = (x0, x1, .. x5)\n@@ -99,9 +104,9 @@ def test_bell():\n     for i in [0, 2, 3, 7, 13, 42, 55]:\n         assert bell(i).evalf() == bell(n).rewrite(Sum).evalf(subs={n: i})\n \n-    # For negative numbers, the formula does not hold\n-    m = Symbol('m', integer=True)\n-    assert bell(-1).evalf() == bell(m).rewrite(Sum).evalf(subs={m: -1})\n+    # issue 9184\n+    n = Dummy('n')\n+    assert bell(n).limit(n, S.Infinity) == S.Infinity\n \n \n def test_harmonic():\n",
+  "FAIL_TO_PASS": [
+    "test_bell"
+  ],
+  "PASS_TO_PASS": [
+    "test_bernoulli",
+    "test_fibonacci",
+    "test_harmonic",
+    "test_harmonic_rational",
+    "test_harmonic_evalf",
+    "test_harmonic_rewrite_polygamma",
+    "test_harmonic_rewrite_sum",
+    "test_euler",
+    "test_euler_odd",
+    "test_euler_polynomials",
+    "test_euler_polynomial_rewrite",
+    "test_catalan",
+    "test_genocchi",
+    "test_nC_nP_nT",
+    "test_issue_8496"
+  ]
+}

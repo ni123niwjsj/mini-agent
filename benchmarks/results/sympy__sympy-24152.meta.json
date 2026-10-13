@@ -1,0 +1,24 @@
+{
+  "instance_id": "sympy__sympy-24152",
+  "status": "SUCCESS",
+  "duration_seconds": 36.07573366165161,
+  "turns": 8,
+  "tool_calls": [
+    "grep",
+    "read_file",
+    "edit_file",
+    "read_file",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-24152.patch",
+  "patch_content": "diff --git a/sympy/physics/quantum/tensorproduct.py b/sympy/physics/quantum/tensorproduct.py\nindex 78accaf295..27b2df132e 100644\n--- a/sympy/physics/quantum/tensorproduct.py\n+++ b/sympy/physics/quantum/tensorproduct.py\n@@ -246,9 +246,10 @@ def _eval_expand_tensorproduct(self, **hints):\n             if isinstance(args[i], Add):\n                 for aa in args[i].args:\n                     tp = TensorProduct(*args[:i] + (aa,) + args[i + 1:])\n-                    if isinstance(tp, TensorProduct):\n-                        tp = tp._eval_expand_tensorproduct()\n-                    add_args.append(tp)\n+                    c_part, nc_part = tp.args_cnc()\n+                    if len(nc_part) == 1 and isinstance(nc_part[0], TensorProduct):\n+                        nc_part = (nc_part[0]._eval_expand_tensorproduct(), )\n+                    add_args.append(Mul(*c_part)*Mul(*nc_part))\n                 break\n \n         if add_args:\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete. \n\n## Summary\n\n**Root cause:** In `TensorProduct._eval_expand_tensorproduct()` (in `sympy/physics/quantum/tensorproduct.py`), when expanding a `TensorProduct` across an `Add`, the code created a new `TensorProduct` for each summand and only recursed if the result was *directly* a `TensorProduct` instance. However, `TensorProduct.__new__` pulls out commutative (scalar) factors, returning a `Mul(c_factors, TensorProduct(...))` instead. In that case the `isinstance(tp, TensorProduct)` check failed, so the nested tensor products were never recursively expanded — leaving the expansion incomplete (e.g. `2*Ux(U + V) - Vx(U + V)`).\n\n**Fix:** Split the created object into commutative and non-commutative parts using `args_cnc()`. If the non-commutative part contains exactly one `TensorProduct`, recurse into it, then reconstruct the term as `Mul(*c_part)*Mul(*nc_part)`. This also correctly handles the case where the constructor returns `0` (no `TensorProduct` in `nc_part`).\n\n**Verification:**\n- `TensorProduct(2*U - V, U + V).expand(tensorproduct=True)` now yields the complete `2*UxU + 2*UxV - VxU - VxV`.\n- `TensorProduct(U-U, U+V).expand(tensorproduct=True)` yields `0` (no crash).\n- All 8 tests in `test_tensorproduct.py` pass."
+}

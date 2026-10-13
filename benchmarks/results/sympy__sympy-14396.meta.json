@@ -1,0 +1,42 @@
+{
+  "instance_id": "sympy__sympy-14396",
+  "status": "ERROR",
+  "duration_seconds": 144.1922447681427,
+  "turns": 22,
+  "tool_calls": [
+    "read_file",
+    "bash",
+    "read_file",
+    "grep",
+    "web_fetch",
+    "web_search",
+    "web_fetch",
+    "web_fetch",
+    "bash",
+    "bash",
+    "read_file",
+    "web_fetch",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "edit_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-14396.patch",
+  "patch_content": "diff --git a/sympy/polys/polyoptions.py b/sympy/polys/polyoptions.py\nindex 6e504a3057..426072134d 100644\n--- a/sympy/polys/polyoptions.py\n+++ b/sympy/polys/polyoptions.py\n@@ -405,7 +405,7 @@ class Domain(with_metaclass(OptionType, Option)):\n     _re_realfield = re.compile(r\"^(R|RR)(_(\\d+))?$\")\n     _re_complexfield = re.compile(r\"^(C|CC)(_(\\d+))?$\")\n     _re_finitefield = re.compile(r\"^(FF|GF)\\((\\d+)\\)$\")\n-    _re_polynomial = re.compile(r\"^(Z|ZZ|Q|QQ)\\[(.+)\\]$\")\n+    _re_polynomial = re.compile(r\"^(Z|ZZ|Q|QQ|R|RR|C|CC)\\[(.+)\\]$\")\n     _re_fraction = re.compile(r\"^(Z|ZZ|Q|QQ)\\((.+)\\)$\")\n     _re_algebraic = re.compile(r\"^(Q|QQ)\\<(.+)\\>$\")\n \n@@ -459,8 +459,12 @@ def preprocess(cls, domain):\n \n                 if ground in ['Z', 'ZZ']:\n                     return sympy.polys.domains.ZZ.poly_ring(*gens)\n-                else:\n+                elif ground in ['Q', 'QQ']:\n                     return sympy.polys.domains.QQ.poly_ring(*gens)\n+                elif ground in ['R', 'RR']:\n+                    return sympy.polys.domains.RR.poly_ring(*gens)\n+                else:\n+                    return sympy.polys.domains.CC.poly_ring(*gens)\n \n             r = cls._re_fraction.match(domain)\n \n",
+  "error_message": "已达到单次任务最大轮数限制 (22 轮)。如需继续推进，可使用 /turns 提高限制或直接输入指令继续。",
+  "agent_summary": "任务达到最大轮数限制，已暂停。"
+}

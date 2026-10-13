@@ -1,0 +1,24 @@
+{
+  "instance_id": "sympy__sympy-12171",
+  "status": "SUCCESS",
+  "duration_seconds": 26.605765104293823,
+  "turns": 7,
+  "tool_calls": [
+    "grep",
+    "grep",
+    "read_file",
+    "grep",
+    "edit_file",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-12171.patch",
+  "patch_content": "diff --git a/sympy/printing/mathematica.py b/sympy/printing/mathematica.py\nindex 4c2ffd81e1..6cfaed2ede 100644\n--- a/sympy/printing/mathematica.py\n+++ b/sympy/printing/mathematica.py\n@@ -99,6 +99,13 @@ def _print_Function(self, expr):\n                     return \"%s[%s]\" % (mfunc, self.stringify(expr.args, \", \"))\n         return expr.func.__name__ + \"[%s]\" % self.stringify(expr.args, \", \")\n \n+    def _print_Derivative(self, expr):\n+        return \"D[%s]\" % (self.stringify(expr.args, \", \"))\n+\n+    def _print_Float(self, expr):\n+        res = str(expr)\n+        return res.replace('e', '*^')\n+\n     def _print_Integral(self, expr):\n         if len(expr.variables) == 1 and not expr.limits[0][1:]:\n             args = [expr.args[0], expr.variables[0]]\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\nI fixed the Mathematica code printer in `sympy/printing/mathematica.py` by adding two methods to `MCodePrinter`:\n\n1. **`_print_Derivative`** — renders derivatives using Mathematica's `D[...]` syntax. Passing `expr.args` through `stringify` produces `D[f[t], t]` (the function itself gets formatted via the existing `_print_Function`).\n\n2. **`_print_Float`** — converts scientific-notation floats, replacing Python's `e` with Mathematica's `*^` (e.g. `1.0e-4` → `1.0*^-4`).\n\nChanges are minimal and confined to source code; no tests were modified or committed. Verification was done via `git diff` (the environment's Python 3.14 is incompatible with this legacy SymPy version, which imports the removed `collections.Mapping`, so runtime execution isn't possible here)."
+}

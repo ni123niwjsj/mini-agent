@@ -1,0 +1,31 @@
+{
+  "instance_id": "sympy__sympy-13437",
+  "status": "SUCCESS",
+  "duration_seconds": 56.74672198295593,
+  "turns": 12,
+  "tool_calls": [
+    "grep",
+    "grep",
+    "read_file",
+    "read_file",
+    "read_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "grep",
+    "grep",
+    "read_file",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-13437.patch",
+  "patch_content": "diff --git a/sympy/functions/combinatorial/numbers.py b/sympy/functions/combinatorial/numbers.py\nindex 896729ac87..6437ee8f8c 100644\n--- a/sympy/functions/combinatorial/numbers.py\n+++ b/sympy/functions/combinatorial/numbers.py\n@@ -434,6 +434,9 @@ def _bell_incomplete_poly(n, k, symbols):\n \n     @classmethod\n     def eval(cls, n, k_sym=None, symbols=None):\n+        if n is S.Infinity:\n+            return S.Infinity\n+\n         if n.is_Integer and n.is_nonnegative:\n             if k_sym is None:\n                 return Integer(cls._bell(int(n)))\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete and verified.\n\n## Summary\n\n**Root cause:** The `bell` class in `sympy/functions/combinatorial/numbers.py` had no handling for `n = S.Infinity` in its `eval` method. When the limit machinery attempted to evaluate `bell(n)` at `n → oo` (via substitution/gruntz), it produced the unevaluated `bell(oo)` instead of a value. By contrast, `fibonacci` and `lucas` already had explicit `if n is S.Infinity: return S.Infinity` guards, which is why their limits worked.\n\n**Fix:** Added a matching early-return guard to `bell.eval`:\n\n```python\n@classmethod\ndef eval(cls, n, k_sym=None, symbols=None):\n    if n is S.Infinity:\n        return S.Infinity\n\n    if n.is_Integer and n.is_nonnegative:\n        ...\n```\n\n**Verification:**\n- `bell(n).limit(n, oo)` → `oo` ✅\n- `bell(oo)` → `oo` ✅\n- `fibonacci(oo)` / `lucas(oo)` still `oo` ✅\n- Existing `test_bell` passes, and no tests reference `bell(oo)` as unevaluated ✅\n\nThe change is minimal (3 lines), confined to source code, and consistent with the existing `fibonacci`/`lucas` implementations."
+}

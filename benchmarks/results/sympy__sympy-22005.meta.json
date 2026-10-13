@@ -1,0 +1,39 @@
+{
+  "instance_id": "sympy__sympy-22005",
+  "status": "ERROR",
+  "duration_seconds": 246.1460154056549,
+  "turns": 22,
+  "tool_calls": [
+    "read_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "web_search",
+    "bash",
+    "bash",
+    "bash",
+    "edit_file"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-22005.patch",
+  "patch_content": "diff --git a/sympy/solvers/polysys.py b/sympy/solvers/polysys.py\nindex b9809fd4e9..249b43536c 100644\n--- a/sympy/solvers/polysys.py\n+++ b/sympy/solvers/polysys.py\n@@ -240,6 +240,12 @@ def _solve_reduced_system(system, gens, entry=False):\n \n         univariate = list(filter(_is_univariate, basis))\n \n+        if len(basis) < len(gens):\n+            raise NotImplementedError(filldedent('''\n+                only zero-dimensional systems supported\n+                (finite number of solutions)\n+                '''))\n+\n         if len(univariate) == 1:\n             f = univariate.pop()\n         else:\n",
+  "error_message": "已达到单次任务最大轮数限制 (22 轮)。如需继续推进，可使用 /turns 提高限制或直接输入指令继续。",
+  "agent_summary": "任务达到最大轮数限制，已暂停。"
+}

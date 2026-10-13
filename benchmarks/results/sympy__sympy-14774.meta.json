@@ -1,0 +1,22 @@
+{
+  "instance_id": "sympy__sympy-14774",
+  "status": "SUCCESS",
+  "duration_seconds": 25.450422763824463,
+  "turns": 6,
+  "tool_calls": [
+    "grep",
+    "read_file",
+    "edit_file",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-14774.patch",
+  "patch_content": "diff --git a/sympy/printing/latex.py b/sympy/printing/latex.py\nindex a3ead157c1..f3b7669e96 100644\n--- a/sympy/printing/latex.py\n+++ b/sympy/printing/latex.py\n@@ -740,7 +740,7 @@ def _print_Function(self, expr, exp=None):\n                 len(args) == 1 and \\\n                 not self._needs_function_brackets(expr.args[0])\n \n-            inv_trig_table = [\"asin\", \"acos\", \"atan\", \"acot\"]\n+            inv_trig_table = [\"asin\", \"acos\", \"atan\", \"acsc\", \"asec\", \"acot\"]\n \n             # If the function is an inverse trig function, handle the style\n             if func in inv_trig_table:\n",
+  "error_message": null,
+  "agent_summary": "The fix is a simple one-line change. The environment's Python 3.14 can't import this old sympy version (unrelated to our change), but the logic is verifiable.\n\n## Summary\n\n**Root cause:** In `sympy/printing/latex.py`, the `_print_Function` method only recognized `asin`, `acos`, `atan`, and `acot` as inverse trig functions (`inv_trig_table`). Because `acsc` and `asec` were missing, the `inv_trig_style=\"full\"` style (which prepends `\"arc\"` to the function name) was never applied, so they fell back to `\\operatorname{acsc}` / `\\operatorname{asec}` instead of `\\operatorname{arccsc}` / `\\operatorname{arcsec}`.\n\n**Fix applied:**\n```python\ninv_trig_table = [\"asin\", \"acos\", \"atan\", \"acsc\", \"asec\", \"acot\"]\n```\n\nWith this change:\n- `full` style → `\"arc\" + func[1:]` → `arccsc`, `arcsec` ✓\n- `abbreviated` style → unchanged (`acsc`, `asec`) ✓\n- `power` style → `func[1:]` → `csc`, `sec` ✓\n\n`git diff` confirms a single-line, minimal change to source code only (no tests or commits touched)."
+}

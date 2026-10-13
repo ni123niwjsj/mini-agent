@@ -1,0 +1,35 @@
+{
+  "instance_id": "sympy__sympy-20590",
+  "status": "SUCCESS",
+  "duration_seconds": 145.44100332260132,
+  "turns": 16,
+  "tool_calls": [
+    "bash",
+    "grep",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "grep",
+    "read_file",
+    "read_file",
+    "grep",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-20590.patch",
+  "patch_content": "diff --git a/sympy/core/_print_helpers.py b/sympy/core/_print_helpers.py\nindex 96d7e72676..f7875b9eec 100644\n--- a/sympy/core/_print_helpers.py\n+++ b/sympy/core/_print_helpers.py\n@@ -17,6 +17,8 @@ class Printable:\n     This also adds support for LaTeX printing in jupyter notebooks.\n     \"\"\"\n \n+    __slots__ = ()\n+\n     # Note, we always use the default ordering (lex) in __str__ and __repr__,\n     # regardless of the global setting. See issue 5487.\n     def __str__(self):\n",
+  "error_message": null,
+  "agent_summary": "The 113 core failures are pre-existing and identical before/after my change (environment/Python-version related).\n\n## Summary\n\n**Root cause:** `Symbol` inherits from `Basic` → `Expr` → `AtomicExpr` → `Printable` (from `sympy/core/_print_helpers.py`). Every class in that MRO except `Printable` defines `__slots__`. Because `Printable` was plain (no `__slots__`), Python automatically gave it a `__dict__`, which propagated to all SymPy objects (including `Symbol`). That extra `__dict__` defeats the memory-saving purpose of `__slots__` and reappeared in 1.7.\n\n**Fix:** Added `__slots__ = ()` to the `Printable` base class in `sympy/core/_print_helpers.py`, restoring the `__slots__` chain.\n\n**Verification:**\n- `sympy.Symbol('s').__dict__` now correctly raises `AttributeError`, while `sympy.Symbol('s').__slots__` remains `('name',)`.\n- Test results for the core suite are unchanged before/after the edit (no new failures introduced).\n\n```diff\n--- a/sympy/core/_print_helpers.py\n+++ b/sympy/core/_print_helpers.py\n@@ -17,6 +17,8 @@ class Printable:\n     This also adds support for LaTeX printing in jupyter notebooks.\n     \"\"\"\n \n+    __slots__ = ()\n+\n     # Note, we always use the default ordering (lex) in __str__ and __repr__,\n```"
+}

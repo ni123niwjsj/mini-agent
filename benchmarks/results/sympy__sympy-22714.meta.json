@@ -1,0 +1,33 @@
+{
+  "instance_id": "sympy__sympy-22714",
+  "status": "SUCCESS",
+  "duration_seconds": 108.15696501731873,
+  "turns": 14,
+  "tool_calls": [
+    "read_file",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "web_search",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "read_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-22714.patch",
+  "patch_content": "diff --git a/sympy/geometry/point.py b/sympy/geometry/point.py\nindex 73c20334d0..11bad7ff9c 100644\n--- a/sympy/geometry/point.py\n+++ b/sympy/geometry/point.py\n@@ -152,7 +152,7 @@ def __new__(cls, *args, **kwargs):\n                         'warn' or 'ignore'.'''))\n         if any(coords[dim:]):\n             raise ValueError('Nonzero coordinates cannot be removed.')\n-        if any(a.is_number and im(a) for a in coords):\n+        if any(a.is_number and im(a).is_zero is False for a in coords):\n             raise ValueError('Imaginary coordinates are not permitted.')\n         if not all(isinstance(a, Expr) for a in coords):\n             raise TypeError('Coordinates must be valid SymPy expressions.')\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete.\n\n## Summary\n\n**Root cause:** In `sympy/geometry/point.py`, the `Point.__new__` method validated coordinates with:\n```python\nif any(a.is_number and im(a) for a in coords):\n```\n\nWhen `evaluate(False)` is active, `im(Integer(1))` returns the unevaluated expression `im(1)` rather than `0`. Since a non-zero `Expr` is truthy, the `any(...)` check incorrectly treats a real integer as imaginary and raises `ValueError: Imaginary coordinates are not permitted.`\n\n**Fix:** Compare the imaginary part explicitly against `False` instead of relying on truthiness:\n```python\nif any(a.is_number and im(a).is_zero is False for a in coords):\n```\n\nNow `im(a).is_zero` is `True` for real numbers (even unevaluated under `evaluate(False)`) and `False` for genuine imaginary coordinates, preserving the intended rejection of imaginary points while correctly allowing real ones.\n\n**Verification:** The reported snippet now returns `Point2D(1, 2)`, `Point(I, 2)` still raises the expected error, and the existing `test_point.py` suite passes."
+}

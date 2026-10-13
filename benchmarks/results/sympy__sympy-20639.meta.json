@@ -1,0 +1,40 @@
+{
+  "instance_id": "sympy__sympy-20639",
+  "status": "ERROR",
+  "duration_seconds": 221.15822625160217,
+  "turns": 22,
+  "tool_calls": [
+    "bash",
+    "grep",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "web_search",
+    "bash",
+    "bash",
+    "web_fetch",
+    "web_fetch",
+    "bash",
+    "bash",
+    "web_fetch",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-20639.patch",
+  "patch_content": "",
+  "error_message": "已达到单次任务最大轮数限制 (22 轮)。如需继续推进，可使用 /turns 提高限制或直接输入指令继续。",
+  "agent_summary": "任务达到最大轮数限制，已暂停。"
+}

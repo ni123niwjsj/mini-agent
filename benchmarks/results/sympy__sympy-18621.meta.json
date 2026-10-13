@@ -1,0 +1,28 @@
+{
+  "instance_id": "sympy__sympy-18621",
+  "status": "SUCCESS",
+  "duration_seconds": 69.62795186042786,
+  "turns": 11,
+  "tool_calls": [
+    "bash",
+    "read_file",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-18621.patch",
+  "patch_content": "diff --git a/sympy/matrices/expressions/blockmatrix.py b/sympy/matrices/expressions/blockmatrix.py\nindex 11aebbc59f..b821c42845 100644\n--- a/sympy/matrices/expressions/blockmatrix.py\n+++ b/sympy/matrices/expressions/blockmatrix.py\n@@ -301,7 +301,7 @@ def blocks(self):\n         data = [[mats[i] if i == j else ZeroMatrix(mats[i].rows, mats[j].cols)\n                         for j in range(len(mats))]\n                         for i in range(len(mats))]\n-        return ImmutableDenseMatrix(data)\n+        return ImmutableDenseMatrix(data, evaluate=False)\n \n     @property\n     def shape(self):\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\n**Root cause:** In `BlockDiagMatrix.blocks` (in `sympy/matrices/expressions/blockmatrix.py`), the block structure is constructed with `ImmutableDenseMatrix(data)`. When there is only one element, `data` is a 1×1 nested list `[[M]]`. Without `evaluate=False`, `ImmutableDenseMatrix` auto-evaluates and *flattens* the single block, so `self.blocks` becomes `M` itself instead of a 1×1 matrix of blocks.\n\nAs a result, in `BlockMatrix._entry`, `self.blocks[row_block, col_block]` returns a scalar entry of `M` (e.g. the `One` object) rather than the block matrix, and the subsequent `[i, j]` subscript raises `TypeError: 'One' object is not subscriptable`. `BlockMatrix.__new__` already passes `evaluate=False` for exactly this reason.\n\n**Fix:** Pass `evaluate=False` when building the block matrix in `BlockDiagMatrix.blocks`, preserving the block structure for the single-element case:\n\n```python\nreturn ImmutableDenseMatrix(data, evaluate=False)\n```\n\n**Verification:** `Matrix(BlockDiagMatrix(M))` now returns `Matrix([[1, 2], [3, 4]])`; the multi-element case and single-element `transpose`/`inverse` still behave correctly. The full `test_blockmatrix.py` suite passes (16/16)."
+}

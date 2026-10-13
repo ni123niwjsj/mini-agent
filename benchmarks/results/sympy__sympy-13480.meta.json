@@ -1,0 +1,24 @@
+{
+  "instance_id": "sympy__sympy-13480",
+  "status": "SUCCESS",
+  "duration_seconds": 20.5140323638916,
+  "turns": 5,
+  "tool_calls": [
+    "read_file",
+    "grep",
+    "edit_file",
+    "bash",
+    "grep",
+    "bash",
+    "read_file"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-13480.patch",
+  "patch_content": "diff --git a/sympy/functions/elementary/hyperbolic.py b/sympy/functions/elementary/hyperbolic.py\nindex 2a4555d919..5fbb73c786 100644\n--- a/sympy/functions/elementary/hyperbolic.py\n+++ b/sympy/functions/elementary/hyperbolic.py\n@@ -587,7 +587,7 @@ def eval(cls, arg):\n                 x, m = _peeloff_ipi(arg)\n                 if m:\n                     cothm = coth(m)\n-                    if cotm is S.ComplexInfinity:\n+                    if cothm is S.ComplexInfinity:\n                         return coth(x)\n                     else: # cothm == 0\n                         return tanh(x)\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\n**Root cause:** A typo in `Coth.eval` within `sympy/functions/elementary/hyperbolic.py`. The variable was assigned as `cothm` (line 589) but referenced as `cotm` (line 590), raising `NameError: name 'cotm' is not defined`.\n\nThis code path is reached when `arg.is_Add` and `_peeloff_ipi(arg)` yields a nonzero `m`. For `coth(log(tan(x)))`, substituting a numeric value triggers evaluation where the argument becomes a sum, hitting the buggy branch for the offending integer values.\n\n**Fix:** Corrected the reference to the assigned variable, matching the identical pattern already used in `Tanh.eval` (lines 448–449):\n\n```python\ncothm = coth(m)\nif cothm is S.ComplexInfinity:   # was: cotm\n    return coth(x)\nelse:  # cothm == 0\n    return tanh(x)\n```\n\nThe change is minimal (one token), consistent with the sibling `tanh` implementation, and does not touch any tests. (Runtime verification wasn't possible in this shell because the workspace's old sympy is incompatible with the installed Python 3.14 — `collections.Mapping` import — but the fix is a straightforward NameError correction.)"
+}

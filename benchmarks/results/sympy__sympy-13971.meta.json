@@ -1,0 +1,28 @@
+{
+  "instance_id": "sympy__sympy-13971",
+  "status": "SUCCESS",
+  "duration_seconds": 37.63004183769226,
+  "turns": 8,
+  "tool_calls": [
+    "bash",
+    "grep",
+    "grep",
+    "read_file",
+    "read_file",
+    "edit_file",
+    "bash",
+    "grep",
+    "bash",
+    "grep",
+    "grep"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-13971.patch",
+  "patch_content": "diff --git a/sympy/printing/latex.py b/sympy/printing/latex.py\nindex 364b24a1e5..9edbaadc30 100644\n--- a/sympy/printing/latex.py\n+++ b/sympy/printing/latex.py\n@@ -1655,9 +1655,9 @@ def _print_SeqFormula(self, s):\n         else:\n             printset = tuple(s)\n \n-        return (r\"\\left\\[\"\n+        return (r\"\\left[\"\n               + r\", \".join(self._print(el) for el in printset)\n-              + r\"\\right\\]\")\n+              + r\"\\right]\")\n \n     _print_SeqPer = _print_SeqFormula\n     _print_SeqAdd = _print_SeqFormula\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete. \n\n## Summary\n\n**Root cause:** In `sympy/printing/latex.py`, the `_print_SeqFormula` method (which also handles `SeqPer`, `SeqAdd`, and `SeqMul` via aliases) rendered sequence delimiters using escaped brackets:\n\n```python\nreturn (r\"\\left\\[\"\n      + r\", \".join(self._print(el) for el in printset)\n      + r\"\\right\\]\")\n```\n\nThe backslashes before `[` and `]` (`\\[` and `\\]`) are not valid LaTeX for literal square brackets — LaTeX only uses `\\left[ ... \\right]` for automatic delimiter sizing. The escaped forms are not recognized by MathJax/Markdown renderers, so the Jupyter output `\\left\\[0, 1, 4, 9, \\ldots\\right\\]` failed to render when copied into a Markdown cell.\n\n**Fix:** Removed the spurious backslashes so the correct LaTeX is produced:\n\n```python\nreturn (r\"\\left[\"\n      + r\", \".join(self._print(el) for el in printset)\n      + r\"\\right]\")\n```\n\nNow the output is `\\left[0, 1, 4, 9, \\ldots\\right]`, which renders properly. I confirmed via grep that no other locations in the codebase escape the sequence brackets. (Tests referencing the old escaped string were intentionally left untouched per the instructions.)"
+}

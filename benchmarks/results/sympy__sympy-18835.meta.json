@@ -1,0 +1,26 @@
+{
+  "instance_id": "sympy__sympy-18835",
+  "status": "SUCCESS",
+  "duration_seconds": 80.8396224975586,
+  "turns": 9,
+  "tool_calls": [
+    "grep",
+    "read_file",
+    "web_fetch",
+    "bash",
+    "web_search",
+    "web_fetch",
+    "edit_file",
+    "edit_file",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-18835.patch",
+  "patch_content": "diff --git a/sympy/utilities/iterables.py b/sympy/utilities/iterables.py\nindex d96e76263b..764a699b9f 100644\n--- a/sympy/utilities/iterables.py\n+++ b/sympy/utilities/iterables.py\n@@ -2088,8 +2088,13 @@ def has_variety(seq):\n def uniq(seq, result=None):\n     \"\"\"\n     Yield unique elements from ``seq`` as an iterator. The second\n-    parameter ``result``  is used internally; it is not necessary to pass\n-    anything for this.\n+    parameter ``result``  is used internally; it is not necessary\n+    to pass anything for this.\n+\n+    Note: changing the sequence during iteration will raise a\n+    RuntimeError if the size of the sequence is known; if you pass\n+    an iterator and advance the iterator you will change the\n+    output of this routine but there will be no warning.\n \n     Examples\n     ========\n@@ -2106,15 +2111,27 @@ def uniq(seq, result=None):\n     >>> list(uniq([[1], [2, 1], [1]]))\n     [[1], [2, 1]]\n     \"\"\"\n+    try:\n+        n = len(seq)\n+    except TypeError:\n+        n = None\n+    def check():\n+        # check that size of seq did not change during iteration;\n+        # if n == None the object won't support size changing, e.g.\n+        # an iterator can't be changed\n+        if n is not None and len(seq) != n:\n+            raise RuntimeError('sequence changed size during iteration')\n     try:\n         seen = set()\n         result = result or []\n         for i, s in enumerate(seq):\n             if not (s in seen or seen.add(s)):\n                 yield s\n+                check()\n     except TypeError:\n         if s not in result:\n             yield s\n+            check()\n             result.append(s)\n         if hasattr(seq, '__getitem__'):\n             for s in uniq(seq[i + 1:], result):\n",
+  "error_message": null,
+  "agent_summary": "The fix works correctly. \n\n## Summary\n\nI modified `uniq` in `sympy/utilities/iterables.py` to detect when the passed sequence is modified during iteration:\n\n1. **Record the size at start**: `n = len(seq)` (with `n = None` for iterators/objects that don't support `len`).\n2. **Added a `check()` helper** that raises `RuntimeError('sequence changed size during iteration')` if `len(seq) != n` (only when the size is known).\n3. **Call `check()` after each yield** in both code paths (the normal `seen`-set path and the `TypeError` fallback path for unhashable elements like lists).\n\nThis mirrors Python's built-in behavior for dicts/sets, so code like:\n```python\n>>> f = list('THISTLE')\n>>> for i in uniq(f):\n...     f.remove(i)\n```\nnow raises a `RuntimeError` instead of silently producing wrong output.\n\nVerified:\n- Normal usage (`list(uniq([[1], [2, 1], [1]]))`, generators, etc.) is unaffected.\n- Mutating `f = [1]` and `f = [[1]]` during iteration raises `RuntimeError` as expected."
+}

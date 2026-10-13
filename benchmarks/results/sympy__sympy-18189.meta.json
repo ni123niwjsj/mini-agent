@@ -1,0 +1,27 @@
+{
+  "instance_id": "sympy__sympy-18189",
+  "status": "SUCCESS",
+  "duration_seconds": 144.88062572479248,
+  "turns": 10,
+  "tool_calls": [
+    "bash",
+    "grep",
+    "read_file",
+    "bash",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-18189.patch",
+  "patch_content": "diff --git a/sympy/solvers/diophantine.py b/sympy/solvers/diophantine.py\nindex 6092e35dab..b43f5c1dcf 100644\n--- a/sympy/solvers/diophantine.py\n+++ b/sympy/solvers/diophantine.py\n@@ -182,7 +182,7 @@ def diophantine(eq, param=symbols(\"t\", integer=True), syms=None,\n             if syms != var:\n                 dict_sym_index = dict(zip(syms, range(len(syms))))\n                 return {tuple([t[dict_sym_index[i]] for i in var])\n-                            for t in diophantine(eq, param)}\n+                            for t in diophantine(eq, param, permute=permute)}\n         n, d = eq.as_numer_denom()\n         if n.is_number:\n             return set()\n",
+  "error_message": null,
+  "agent_summary": "The 2 failures are pre-existing (unrelated to my change, confirmed by stashing).\n\n## Summary\n\n**Root cause:** In `sympy/solvers/diophantine.py`, the `diophantine()` function handles a user-specified `syms` order that differs from the default sorted variable order by recursively calling itself and then re-indexing the result tuples:\n\n```python\nif syms != var:\n    dict_sym_index = dict(zip(syms, range(len(syms))))\n    return {tuple([t[dict_sym_index[i]] for i in var])\n                for t in diophantine(eq, param)}   # <-- permute dropped\n```\n\nThe recursive call `diophantine(eq, param)` omitted the `permute` argument, so it defaulted to `permute=False`. As a result, when `syms` was given in a non-default order (like `(n, m)`), all sign/value permutations were lost and only the base solution `(3, 2)` was returned — hence the order-dependent incomplete results.\n\n**Fix:** Propagate the `permute` flag through the recursive call:\n\n```python\nreturn {tuple([t[dict_sym_index[i]] for i in var])\n            for t in diophantine(eq, param, permute=permute)}\n```\n\nNow both `syms=(m, n)` and `syms=(n, m)` return the same complete set of 8 solutions, matching the documented behavior."
+}

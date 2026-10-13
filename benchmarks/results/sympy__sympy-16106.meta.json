@@ -1,0 +1,42 @@
+{
+  "instance_id": "sympy__sympy-16106",
+  "status": "SUCCESS",
+  "duration_seconds": 150.56292867660522,
+  "turns": 20,
+  "tool_calls": [
+    "read_file",
+    "grep",
+    "read_file",
+    "read_file",
+    "grep",
+    "grep",
+    "read_file",
+    "read_file",
+    "read_file",
+    "web_search",
+    "bash",
+    "read_file",
+    "web_fetch",
+    "read_file",
+    "grep",
+    "read_file",
+    "bash",
+    "web_fetch",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-16106.patch",
+  "patch_content": "diff --git a/sympy/printing/mathml.py b/sympy/printing/mathml.py\nindex 1aa0ee01a2..2cdc05a7b6 100644\n--- a/sympy/printing/mathml.py\n+++ b/sympy/printing/mathml.py\n@@ -1271,6 +1271,26 @@ def _print_Lambda(self, e):\n         return x\n \n \n+    def _print_tuple(self, e):\n+        x = self.dom.createElement('mfenced')\n+        for i in e:\n+            x.appendChild(self._print(i))\n+        return x\n+\n+\n+    def _print_IndexedBase(self, e):\n+        return self._print(e.label)\n+\n+    def _print_Indexed(self, e):\n+        x = self.dom.createElement('msub')\n+        x.appendChild(self._print(e.base))\n+        if len(e.indices) == 1:\n+            x.appendChild(self._print(e.indices[0]))\n+            return x\n+        x.appendChild(self._print(e.indices))\n+        return x\n+\n+\n def mathml(expr, printer='content', **settings):\n     \"\"\"Returns the MathML representation of expr. If printer is presentation then\n      prints Presentation MathML else prints content MathML.\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete. Here's a summary:\n\n## Summary\n\n**Root cause:** The `MathMLPresentationPrinter` class had no handler for `Indexed` / `IndexedBase` objects. When printing an `Indexed` expression, it fell through to the generic handler which iterated `for arg in e`, but `Indexed` is not iterable, raising `TypeError: 'Indexed' object is not iterable`. It also lacked a `_print_tuple` handler needed to render multiple indices `(b, c, d)`.\n\n**Fix:** Added three methods to `MathMLPresentationPrinter` in `sympy/printing/mathml.py`:\n\n- `_print_IndexedBase` — prints the base's label (e.g. `IndexedBase(a)` → `a`).\n- `_print_Indexed` — renders an `Indexed` as an `<msub>` with the base and the index/indices. A single index becomes the subscript directly; multiple indices are wrapped in an `<mfenced>` group.\n- `_print_tuple` — renders a tuple (the multi-index container) as an `<mfenced>` element.\n\nThis makes `mathml(IndexedBase(a)[b])` produce `<msub><mi>a</mi><mi>b</mi></msub>`, and correctly handles complex expressions mixing `Indexed` terms (e.g. products with invisible-times operators).\n\n**Verification:** All new PR test assertions pass. The 9 pre-existing test failures in `test_mathml.py` are unrelated (they occur identically on the unmodified code, caused by Python 3.14 XML attribute-ordering changes), and my change introduces no new failures. No tests or git state were modified."
+}

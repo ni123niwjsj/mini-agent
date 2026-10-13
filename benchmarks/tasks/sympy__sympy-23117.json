@@ -1,0 +1,18 @@
+{
+  "instance_id": "sympy__sympy-23117",
+  "repo_name": "sympy_repo",
+  "official_repo": "sympy/sympy",
+  "base_commit": "c5cef2499d6eed024b0db5c792d6ec7c53baa470",
+  "version": "1.11",
+  "problem_statement": "sympy.Array([]) fails, while sympy.Matrix([]) works\nSymPy 1.4 does not allow to construct empty Array (see code below). Is this the intended behavior?\r\n\r\n```\r\n>>> import sympy\r\nKeyboardInterrupt\r\n>>> import sympy\r\n>>> from sympy import Array\r\n>>> sympy.__version__\r\n'1.4'\r\n>>> a = Array([])\r\nTraceback (most recent call last):\r\n  File \"<stdin>\", line 1, in <module>\r\n  File \"/Users/hcui7/miniconda3/envs/a/lib/python3.7/site-packages/sympy/tensor/array/dense_ndim_array.py\", line 130, in __new__\r\n    return cls._new(iterable, shape, **kwargs)\r\n  File \"/Users/hcui7/miniconda3/envs/a/lib/python3.7/site-packages/sympy/tensor/array/dense_ndim_array.py\", line 136, in _new\r\n    shape, flat_list = cls._handle_ndarray_creation_inputs(iterable, shape, **kwargs)\r\n  File \"/Users/hcui7/miniconda3/envs/a/lib/python3.7/site-packages/sympy/tensor/array/ndim_array.py\", line 142, in _handle_ndarray_creation_inputs\r\n    iterable, shape = cls._scan_iterable_shape(iterable)\r\n  File \"/Users/hcui7/miniconda3/envs/a/lib/python3.7/site-packages/sympy/tensor/array/ndim_array.py\", line 127, in _scan_iterable_shape\r\n    return f(iterable)\r\n  File \"/Users/hcui7/miniconda3/envs/a/lib/python3.7/site-packages/sympy/tensor/array/ndim_array.py\", line 120, in f\r\n    elems, shapes = zip(*[f(i) for i in pointer])\r\nValueError: not enough values to unpack (expected 2, got 0)\r\n```\r\n\r\n@czgdp1807 \n",
+  "hints_text": "Technically, `Array([], shape=(0,))` works. It is just unable to understand the shape of `[]`.",
+  "test_patch": "diff --git a/sympy/tensor/array/tests/test_ndim_array.py b/sympy/tensor/array/tests/test_ndim_array.py\n--- a/sympy/tensor/array/tests/test_ndim_array.py\n+++ b/sympy/tensor/array/tests/test_ndim_array.py\n@@ -10,6 +10,11 @@\n \n from sympy.abc import x, y\n \n+mutable_array_types = [\n+    MutableDenseNDimArray,\n+    MutableSparseNDimArray\n+]\n+\n array_types = [\n     ImmutableDenseNDimArray,\n     ImmutableSparseNDimArray,\n@@ -46,7 +51,23 @@ def test_issue_18361():\n     assert simplify(B) == Array([1, 0])\n     assert simplify(C) == Array([x + 1, sin(2*x)])\n \n+\n def test_issue_20222():\n     A = Array([[1, 2], [3, 4]])\n     B = Matrix([[1,2],[3,4]])\n     raises(TypeError, lambda: A - B)\n+\n+\n+def test_issue_17851():\n+    for array_type in array_types:\n+        A = array_type([])\n+        assert isinstance(A, array_type)\n+        assert A.shape == (0,)\n+        assert list(A) == []\n+\n+\n+def test_issue_and_18715():\n+    for array_type in mutable_array_types:\n+        A = array_type([0, 1, 2])\n+        A[0] += 5\n+        assert A[0] == 5\n",
+  "FAIL_TO_PASS": [
+    "test_issue_17851"
+  ],
+  "PASS_TO_PASS": [
+    "test_array_negative_indices",
+    "test_issue_18361",
+    "test_issue_20222"
+  ]
+}

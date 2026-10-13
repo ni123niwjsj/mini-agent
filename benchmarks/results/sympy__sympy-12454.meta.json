@@ -1,0 +1,33 @@
+{
+  "instance_id": "sympy__sympy-12454",
+  "status": "SUCCESS",
+  "duration_seconds": 67.1873505115509,
+  "turns": 15,
+  "tool_calls": [
+    "grep",
+    "grep",
+    "read_file",
+    "grep",
+    "read_file",
+    "read_file",
+    "edit_file",
+    "edit_file",
+    "grep",
+    "grep",
+    "read_file",
+    "bash",
+    "bash",
+    "grep",
+    "read_file",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-12454.patch",
+  "patch_content": "diff --git a/sympy/matrices/matrices.py b/sympy/matrices/matrices.py\nindex 90ea232faf..9f4cd91549 100644\n--- a/sympy/matrices/matrices.py\n+++ b/sympy/matrices/matrices.py\n@@ -641,7 +641,7 @@ def _eval_is_zero(self):\n     def _eval_is_upper_hessenberg(self):\n         return all(self[i, j].is_zero\n                    for i in range(2, self.rows)\n-                   for j in range(i - 1))\n+                   for j in range(i - 1) if j < self.cols)\n \n     def _eval_values(self):\n         return [i for i in self if not i.is_zero]\n@@ -1112,7 +1112,7 @@ def is_upper(self):\n         \"\"\"\n         return all(self[i, j].is_zero\n                    for i in range(1, self.rows)\n-                   for j in range(i))\n+                   for j in range(i) if j < self.cols)\n \n     @property\n     def is_zero(self):\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\n**Root cause:** In `sympy/matrices/matrices.py`, `is_upper` iterated over lower-triangular index pairs `(i, j)` where `j` ran up to `i-1` without bounding `j` by the actual number of columns. For a tall matrix (`rows > cols`), this produced out-of-range column indices — e.g. `zeros(4, 2)` generated the pair `(3, 2)`, and indexing column 2 of a 2-column matrix raised `IndexError`.\n\n**Fix applied (minimal, source-only):**\n1. `is_upper` (line ~1113): added the column bound `for j in range(i) if j < self.cols`.\n2. `_eval_is_upper_hessenberg` (line ~641): had the identical unbounded pattern and would fail the same way for tall matrices; fixed it too with `for j in range(i - 1) if j < self.cols`.\n\n**Verification:** Confirmed via index simulation that the bounded generator only yields in-range indices (`(1,0), (2,0), (2,1), (3,0), (3,1)` for a 4×2), eliminating the offending `(3,2)` pair. `is_lower`/`_eval_is_lower_hessenberg`/`_eval_is_diagonal` were already correctly bounded by `self.cols` and needed no change. `git diff` shows only the two intended source edits; no tests or commits were touched.\n\n(Note: the in-repo runtime couldn't be exercised because this old SymPy revision imports `collections.Mapping`, removed in Python 3.14 — a pre-existing environment incompatibility unrelated to this fix.)"
+}

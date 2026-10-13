@@ -1,0 +1,37 @@
+{
+  "instance_id": "sympy__sympy-13647",
+  "status": "SUCCESS",
+  "duration_seconds": 108.21810817718506,
+  "turns": 16,
+  "tool_calls": [
+    "grep",
+    "grep",
+    "read_file",
+    "read_file",
+    "bash",
+    "bash",
+    "grep",
+    "read_file",
+    "read_file",
+    "grep",
+    "read_file",
+    "read_file",
+    "read_file",
+    "grep",
+    "read_file",
+    "read_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "read_file"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/sympy__sympy-13647.patch",
+  "patch_content": "diff --git a/sympy/matrices/common.py b/sympy/matrices/common.py\nindex 056d9bc497..4aa75e4d77 100644\n--- a/sympy/matrices/common.py\n+++ b/sympy/matrices/common.py\n@@ -86,7 +86,7 @@ def entry(i, j):\n                 return self[i, j]\n             elif pos <= j < pos + other.cols:\n                 return other[i, j - pos]\n-            return self[i, j - pos - other.cols]\n+            return self[i, j - other.cols]\n \n         return self._new(self.rows, self.cols + other.cols,\n                          lambda i, j: entry(i, j))\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete and minimal.\n\n## Summary\n\n**Root cause:** In `sympy/matrices/common.py`, the `MatrixShaping._eval_col_insert` method computes entries for a column-insertion. When building the new matrix, columns to the *left* of the insertion point are copied unchanged, the inserted block fills the middle, and columns to the *right* should be the original columns shifted right by the number of inserted columns.\n\nThe buggy line was:\n```python\nreturn self[i, j - pos - other.cols]\n```\nIt wrongly subtracted the insertion position `pos` in addition to `other.cols`, so original columns were read from too far to the left. This caused the right-hand block of the original matrix to look shifted (the identity block appeared in the wrong rows).\n\n**Fix:** For any output column `j` at or beyond the inserted block (`j >= pos + other.cols`), the corresponding original column is simply `j - other.cols`:\n```python\nreturn self[i, j - other.cols]\n```\n\n**Verification:** Simulating the 6×6 identity / 2×6 block example with the corrected formula reproduces the expected output where the identity columns stay in their original rows (diagonal preserved) and the twos block sits in the middle. The `_eval_row_insert` and the sparse `_eval_col_insert` implementations are already correct, so this single-line change is the complete fix."
+}
