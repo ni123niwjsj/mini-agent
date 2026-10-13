@@ -1,0 +1,28 @@
+{
+  "instance_id": "pytest-dev__pytest-11143",
+  "status": "SUCCESS",
+  "duration_seconds": 52.788689851760864,
+  "turns": 11,
+  "tool_calls": [
+    "bash",
+    "grep",
+    "read_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/pytest-dev__pytest-11143.patch",
+  "patch_content": "diff --git a/src/_pytest/assertion/rewrite.py b/src/_pytest/assertion/rewrite.py\nindex 157903faf..9bf79f1e1 100644\n--- a/src/_pytest/assertion/rewrite.py\n+++ b/src/_pytest/assertion/rewrite.py\n@@ -676,6 +676,7 @@ class AssertionRewriter(ast.NodeVisitor):\n                 expect_docstring\n                 and isinstance(item, ast.Expr)\n                 and isinstance(item.value, ast.Constant)\n+                and isinstance(item.value.value, str)\n             ):\n                 doc = item.value.value\n                 if self.is_rewrite_disabled(doc):\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete. Here's a summary:\n\n## Root Cause\n\nIn `src/_pytest/assertion/rewrite.py`, `AssertionRewriter.run()` scans the module body to locate where to insert its special imports (after the docstring and `__future__` imports). It used this check to detect a docstring:\n\n```python\nif (expect_docstring\n        and isinstance(item, ast.Expr)\n        and isinstance(item.value, ast.Constant)):\n    doc = item.value.value          # <-- could be an int/float/etc.\n    if self.is_rewrite_disabled(doc):\n        return\n```\n\nPython's `ast.Module.docstring` is `None` when the first statement is a bare number, so `expect_docstring` stays `True`. The code then wrongly treated any bare constant expression (e.g. `5` at the top of a file) as a docstring, passing an `int` to `is_rewrite_disabled()`, which evaluates `\"PYTEST_DONT_REWRITE\" in docstring` → `TypeError: argument of type 'int' is not iterable`.\n\n## Fix\n\nAdded a check that the constant is actually a `str` before treating it as a docstring:\n\n```python\nif (expect_docstring\n        and isinstance(item, ast.Expr)\n        and isinstance(item.value, ast.Constant)\n        and isinstance(item.value.value, str)):\n```\n\nIf the leading expression isn't a string docstring, the loop now breaks and rewriting resumes normally. Verified that files beginning with a bare number now collect/rewrite without error, and the diff is a single, minimal source change."
+}

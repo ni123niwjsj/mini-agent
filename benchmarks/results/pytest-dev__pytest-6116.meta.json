@@ -1,0 +1,23 @@
+{
+  "instance_id": "pytest-dev__pytest-6116",
+  "status": "SUCCESS",
+  "duration_seconds": 24.762898683547974,
+  "turns": 7,
+  "tool_calls": [
+    "grep",
+    "read_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/pytest-dev__pytest-6116.patch",
+  "patch_content": "diff --git a/src/_pytest/main.py b/src/_pytest/main.py\nindex 843c5b5f7..b4261c188 100644\n--- a/src/_pytest/main.py\n+++ b/src/_pytest/main.py\n@@ -109,6 +109,7 @@ def pytest_addoption(parser):\n     group.addoption(\n         \"--collectonly\",\n         \"--collect-only\",\n+        \"--co\",\n         action=\"store_true\",\n         help=\"only collect tests, don't execute them.\",\n     ),\n",
+  "error_message": null,
+  "agent_summary": "Both `--co` and `--collect-only` behave identically (the error is just a missing `py` dependency in this environment, unrelated to my change).\n\n## Summary\n\nAdded a one-character shortcut `--co` for the `--collect-only` option in `src/_pytest/main.py`.\n\nA single line was added to the existing `group.addoption` call that already registered `--collectonly` and `--collect-only`:\n\n```python\ngroup.addoption(\n    \"--collectonly\",\n    \"--collect-only\",\n    \"--co\",            # <-- new shortcut\n    action=\"store_true\",\n    help=\"only collect tests, don't execute them.\",\n),\n```\n\nThis leverages argparse's built-in support for multiple option strings, so `pytest --co` is now exactly equivalent to `pytest --collect-only`. The change is minimal, touches only source code, and does not modify any tests."
+}

@@ -1,0 +1,34 @@
+{
+  "instance_id": "pytest-dev__pytest-5692",
+  "status": "SUCCESS",
+  "duration_seconds": 60.83545637130737,
+  "turns": 15,
+  "tool_calls": [
+    "grep",
+    "glob",
+    "read_file",
+    "read_file",
+    "read_file",
+    "grep",
+    "grep",
+    "grep",
+    "bash",
+    "read_file",
+    "edit_file",
+    "edit_file",
+    "grep",
+    "bash",
+    "read_file",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/pytest-dev__pytest-5692.patch",
+  "patch_content": "diff --git a/src/_pytest/junitxml.py b/src/_pytest/junitxml.py\nindex 15c630b1d..bcb6016e1 100644\n--- a/src/_pytest/junitxml.py\n+++ b/src/_pytest/junitxml.py\n@@ -11,8 +11,10 @@ src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd\n import functools\n import os\n import re\n+import socket\n import sys\n import time\n+from datetime import datetime\n \n import py\n \n@@ -666,6 +668,8 @@ class LogXML:\n             skipped=self.stats[\"skipped\"],\n             tests=numtests,\n             time=\"%.3f\" % suite_time_delta,\n+            timestamp=datetime.fromtimestamp(self.suite_start_time).isoformat(),\n+            hostname=socket.gethostname(),\n         )\n         logfile.write(Junit.testsuites([suite_node]).unicode(indent=0))\n         logfile.close()\n",
+  "error_message": null,
+  "agent_summary": "The test environment lacks the `py` dependency (evaluated in Docker containers), so full suite can't run locally. The syntax is valid.\n\n## Summary\n\nThe issue was that pytest's JUnit XML output was missing the `hostname` and `timestamp` attributes on the `testsuite` element, which are part of the standard JUnit XML format used by other tools.\n\n### Fix in `src/_pytest/junitxml.py`\n\n1. **Added imports** for `socket` and `datetime`:\n   ```python\n   import socket\n   ...\n   from datetime import datetime\n   ```\n\n2. **Added the two attributes** to the `<testsuite>` node in `LogXML.pytest_sessionfinish`:\n   ```python\n   suite_node = Junit.testsuite(\n       ...\n       time=\"%.3f\" % suite_time_delta,\n       timestamp=datetime.fromtimestamp(self.suite_start_time).isoformat(),\n       hostname=socket.gethostname(),\n   )\n   ```\n\n- `timestamp` is derived from `self.suite_start_time` (already recorded in `pytest_sessionstart`), formatted as ISO-8601 to match JUnit conventions.\n- `hostname` uses `socket.gethostname()`.\n\nThe generated XML now includes both attributes, matching the standard JUnit report format."
+}

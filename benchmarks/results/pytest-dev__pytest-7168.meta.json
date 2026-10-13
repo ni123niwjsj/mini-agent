@@ -1,0 +1,34 @@
+{
+  "instance_id": "pytest-dev__pytest-7168",
+  "status": "SUCCESS",
+  "duration_seconds": 91.6538507938385,
+  "turns": 17,
+  "tool_calls": [
+    "read_file",
+    "bash",
+    "bash",
+    "read_file",
+    "bash",
+    "bash",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "write_file",
+    "bash",
+    "bash",
+    "write_file",
+    "write_file",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/pytest-dev__pytest-7168.patch",
+  "patch_content": "diff --git a/src/_pytest/_io/saferepr.py b/src/_pytest/_io/saferepr.py\nindex 23af4d0bb..47a00de60 100644\n--- a/src/_pytest/_io/saferepr.py\n+++ b/src/_pytest/_io/saferepr.py\n@@ -20,7 +20,7 @@ def _format_repr_exception(exc: BaseException, obj: Any) -> str:\n     except BaseException as exc:\n         exc_info = \"unpresentable exception ({})\".format(_try_repr_or_str(exc))\n     return \"<[{} raised in repr()] {} object at 0x{:x}>\".format(\n-        exc_info, obj.__class__.__name__, id(obj)\n+        exc_info, type(obj).__name__, id(obj)\n     )\n \n \n",
+  "error_message": null,
+  "agent_summary": "The grep exit code 1 simply confirms no more `__class__` references remain in the file.\n\n## Summary\n\n**Root cause:** In `src/_pytest/_io/saferepr.py`, the `_format_repr_exception` helper built its error message using `obj.__class__.__name__`. Accessing `obj.__class__` goes through the object's `__getattribute__`. When a user object overrides `__getattribute__` to raise (as in the reproducer), this lookup raised again *while already handling the original `__repr__` failure*, so the exception escaped `SafeRepr` entirely and propagated up to pytest's session loop, causing the `INTERNALERROR`.\n\n**Fix:** Use `type(obj).__name__` instead of `obj.__class__.__name__`. `type(obj)` fetches the type directly from the object's header without invoking any attribute lookup, so it cannot trigger a user-defined `__getattribute__`. This keeps the existing message format intact while making the exception-reporting path truly non-raising.\n\n**Verification:**\n- Reproduced the original crash before the fix.\n- After the fix, `saferepr(SomeClass())` returns `<[RuntimeError('No active exception to reraise') raised in repr()] SomeClass object at 0x...>` instead of crashing.\n- Confirmed existing behaviors (`saferepr(1)`, `saferepr(None)`, maxsize ellipsizing, broken `__repr__` handling) remain unchanged.\n- Added `changelog/7168.bugfix.rst` per the project's changelog convention.\n\nThe only source change is the single-line edit shown in `git diff` above; no tests were modified."
+}

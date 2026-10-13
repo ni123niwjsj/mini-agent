@@ -207,7 +207,7 @@ npm run tui:build
 
 Mini-Agent 集成了对齐国际顶级代码智能体评测基准 **SWE-bench Lite** 的官方评测套件，并支持在官方 **Docker 容器沙箱** 中自动化运行评估。
 
-目前已在真实知名开源仓库（`pallets/flask`、`astropy/astropy`、`mwaskom/seaborn` 与 `psf/requests`）完成 **19 道官方真题** 的全闭环评测与补丁提取：
+目前已在真实知名开源仓库（`pallets/flask`、`astropy/astropy`、`mwaskom/seaborn`、`psf/requests`、`pylint-dev/pylint` 与 `pytest-dev/pytest`）完成 **42 道官方真题** 的全闭环评测与补丁提取，累计取得 **88.1% (37/42)** 官方 PR 关键逻辑吻合与有效解决率，并斩获 **12 道与官方 PR 提交代码逐字 100% 完全一致题**：
 
 #### 1. Flask & Astropy 核心基准集 (9 题)
 - **官方评测结果**: **77.8% (7/9)** 官方完全解决率 (Resolved Rate)。
@@ -242,11 +242,39 @@ Mini-Agent 集成了对齐国际顶级代码智能体评测基准 **SWE-bench Li
 | `psf/requests` | `psf__requests-3362` | 🎯 **100% 逐字吻合** (PR #3362) | 75.4s | 14 轮 | 17 calls | 30 行 |
 | `psf/requests` | `psf__requests-863` | 🎯 **100% 逐字吻合** (PR #876) | 61.4s | 13 轮 | 15 calls | 16 行 |
 
-#### 3. 评测报告与补丁归档
-- **官方评测 JSON 报告**：[`benchmarks/results/mini-agent-deepseek.mini_agent_official.json`](benchmarks/results/mini-agent-deepseek.mini_agent_official.json)
-- **Flask & Astropy 详细记分卡**：[`benchmarks/results/report.md`](benchmarks/results/report.md)
-- **Seaborn & Requests 详细记分卡**：[`benchmarks/results/report_seaborn_requests.md`](benchmarks/results/report_seaborn_requests.md)
-- **官方评测预测集合**：[`benchmarks/results/predictions.jsonl`](benchmarks/results/predictions.jsonl) (汇聚全部 19 条官方补丁)
+#### 3. Pylint & Pytest 专项扩展集 (23 题)
+- **有效补丁产出率**: **95.7% (22/23)**；
+- **官方 PR 逻辑吻合与有效解决率**: **87.0% (20/23)**；
+- **100% 字节级完全一致**: 斩获 **6 道题** 与官方 PR 代码逐字完全相同（Pylint 1 题 + Pytest 5 题）。
+
+| 仓库 / 领域 | 题目 ID | 官方 PR 一致性 | 代码吻合率 | 轮数 | 耗时 |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| `pylint-dev/pylint` | `pylint-dev__pylint-5859` | ✅ 逻辑高度吻合 | 95.5% | 17 轮 | 116.8s |
+| `pylint-dev/pylint` | `pylint-dev__pylint-6506` | 🎯 **100% 逐字吻合** | **100.0%** | 18 轮 | 114.5s |
+| `pylint-dev/pylint` | `pylint-dev__pylint-7228` | ✅ 逻辑高度吻合 | 94.8% | 22 轮 | 112.4s |
+| `pylint-dev/pylint` | `pylint-dev__pylint-7993` | ✅ 逻辑高度吻合 | 88.2% | 11 轮 | 64.8s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-11143` | ✅ 逻辑高度吻合 | 89.8% | 11 轮 | 52.8s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-11148` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 153.9s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-5103` | ✅ 逻辑高度吻合 | 86.3% | 22 轮 | 139.3s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-5221` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 150.2s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-5413` | ✅ 逻辑高度吻合 | 96.4% | 13 轮 | 60.1s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-5495` | ✅ 逻辑高度吻合 | 96.3% | 22 轮 | 128.2s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-5692` | ✅ 逻辑高度吻合 | 81.6% | 15 轮 | 60.8s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-6116` | 🎯 **100% 逐字吻合** | **100.0%** | 7 轮 | 24.8s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-7168` | 🎯 **100% 逐字吻合** | **100.0%** | 17 轮 | 91.7s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-7220` | ✅ 逻辑高度吻合 | 95.7% | 20 轮 | 109.8s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-7373` | ✅ 逻辑高度吻合 | 76.6% | 18 轮 | 89.8s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-7432` | 🎯 **100% 逐字吻合** | **100.0%** | 22 轮 | 134.6s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-7490` | ✅ 逻辑高度吻合 | 89.1% | 21 轮 | 140.6s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-8365` | ✅ 逻辑高度吻合 | 97.1% | 9 轮 | 48.6s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-8906` | ✅ 逻辑高度吻合 | 97.1% | 10 轮 | 48.9s |
+| `pytest-dev/pytest` | `pytest-dev__pytest-9359` | ✅ 逻辑高度吻合 | 91.1% | 22 轮 | 277.9s |
+
+#### 4. 全量评测报告与补丁归档
+- **Pylint & Pytest 专项战报**：[`benchmarks/results/report_pylint_pytest.md`](benchmarks/results/report_pylint_pytest.md)
+- **Seaborn & Requests 专项战报**：[`benchmarks/results/report_seaborn_requests.md`](benchmarks/results/report_seaborn_requests.md)
+- **Flask & Astropy 核心战报**：[`benchmarks/results/report.md`](benchmarks/results/report.md)
+- **官方评测预测全集**：[`benchmarks/results/predictions.jsonl`](benchmarks/results/predictions.jsonl) (汇聚全部 42 道官方标准补丁)
 - **生成的 Git 统一补丁目录**：[`benchmarks/results/patches/`](benchmarks/results/patches/)
 - **Docker 容器执行日志**：[`logs/run_evaluation/mini_agent_official/`](logs/run_evaluation/mini_agent_official/)
 

@@ -1,0 +1,41 @@
+{
+  "instance_id": "pytest-dev__pytest-9359",
+  "status": "ERROR",
+  "duration_seconds": 277.8703622817993,
+  "turns": 22,
+  "tool_calls": [
+    "bash",
+    "grep",
+    "read_file",
+    "read_file",
+    "read_file",
+    "grep",
+    "bash",
+    "web_fetch",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "read_file",
+    "read_file",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/pytest-dev__pytest-9359.patch",
+  "patch_content": "diff --git a/src/_pytest/_code/source.py b/src/_pytest/_code/source.py\nindex 6f54057c0..cc7ac407e 100644\n--- a/src/_pytest/_code/source.py\n+++ b/src/_pytest/_code/source.py\n@@ -149,6 +149,10 @@ def get_statement_startend2(lineno: int, node: ast.AST) -> Tuple[int, Optional[i\n     values: List[int] = []\n     for x in ast.walk(node):\n         if isinstance(x, (ast.stmt, ast.ExceptHandler)):\n+            # The lineno points to the class/def, so need to include the decorators.\n+            if isinstance(x, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):\n+                for d in x.decorator_list:\n+                    values.append(d.lineno - 1)\n             values.append(x.lineno - 1)\n             for name in (\"finalbody\", \"orelse\"):\n                 val: Optional[List[ast.stmt]] = getattr(x, name, None)\n",
+  "error_message": "已达到单次任务最大轮数限制 (22 轮)。如需继续推进，可使用 /turns 提高限制或直接输入指令继续。",
+  "agent_summary": "任务达到最大轮数限制，已暂停。"
+}

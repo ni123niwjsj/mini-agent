@@ -1,0 +1,36 @@
+{
+  "instance_id": "pytest-dev__pytest-7373",
+  "status": "SUCCESS",
+  "duration_seconds": 89.78879451751709,
+  "turns": 18,
+  "tool_calls": [
+    "read_file",
+    "glob",
+    "glob",
+    "read_file",
+    "grep",
+    "grep",
+    "edit_file",
+    "edit_file",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/pytest-dev__pytest-7373.patch",
+  "patch_content": "diff --git a/src/_pytest/mark/evaluate.py b/src/_pytest/mark/evaluate.py\nindex 759191668..6ac7b646b 100644\n--- a/src/_pytest/mark/evaluate.py\n+++ b/src/_pytest/mark/evaluate.py\n@@ -2,7 +2,6 @@ import os\n import platform\n import sys\n import traceback\n-from typing import Any\n from typing import Dict\n from typing import List\n from typing import Optional\n@@ -10,25 +9,7 @@ from typing import Optional\n from ..outcomes import fail\n from ..outcomes import TEST_OUTCOME\n from .structures import Mark\n-from _pytest.config import Config\n from _pytest.nodes import Item\n-from _pytest.store import StoreKey\n-\n-\n-evalcache_key = StoreKey[Dict[str, Any]]()\n-\n-\n-def cached_eval(config: Config, expr: str, d: Dict[str, object]) -> Any:\n-    default = {}  # type: Dict[str, object]\n-    evalcache = config._store.setdefault(evalcache_key, default)\n-    try:\n-        return evalcache[expr]\n-    except KeyError:\n-        import _pytest._code\n-\n-        exprcode = _pytest._code.compile(expr, mode=\"eval\")\n-        evalcache[expr] = x = eval(exprcode, d)\n-        return x\n \n \n class MarkEvaluator:\n@@ -98,7 +79,10 @@ class MarkEvaluator:\n                     self.expr = expr\n                     if isinstance(expr, str):\n                         d = self._getglobals()\n-                        result = cached_eval(self.item.config, expr, d)\n+                        import _pytest._code\n+\n+                        exprcode = _pytest._code.compile(expr, mode=\"eval\")\n+                        result = eval(exprcode, d)\n                     else:\n                         if \"reason\" not in mark.kwargs:\n                             # XXX better be checked at collection time\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\n**Root cause:** In `src/_pytest/mark/evaluate.py`, the `cached_eval` function cached `eval()` results in a `config._store` dict keyed **only by the expression string**. But the evaluation result actually depends on the item's globals (`d = self._getglobals()`, which merges the test module's `__globals__`). So when two modules contain the same condition string (e.g. `\"skip\"`) but bind the referenced name to different values, the second module incorrectly reused the first module's cached result.\n\n**Fix:** Removed `cached_eval` entirely (along with its `evalcache_key` and now-unused `Any`, `Config`, `StoreKey` imports) and inlined the evaluation logic into `MarkEvaluator._istrue`:\n\n```python\nif isinstance(expr, str):\n    d = self._getglobals()\n    import _pytest._code\n\n    exprcode = _pytest._code.compile(expr, mode=\"eval\")\n    result = eval(exprcode, d)\n```\n\nAs suggested in the issue, the caching was unnecessary, and dropping it guarantees each item's condition is evaluated against its own globals. The change is a net `+4 / -20` lines in a single source file, no tests modified."
+}

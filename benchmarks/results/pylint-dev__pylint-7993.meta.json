@@ -1,0 +1,28 @@
+{
+  "instance_id": "pylint-dev__pylint-7993",
+  "status": "SUCCESS",
+  "duration_seconds": 64.82525563240051,
+  "turns": 11,
+  "tool_calls": [
+    "read_file",
+    "grep",
+    "bash",
+    "read_file",
+    "web_search",
+    "web_fetch",
+    "web_fetch",
+    "web_fetch",
+    "edit_file",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/pylint-dev__pylint-7993.patch",
+  "patch_content": "diff --git a/pylint/reporters/text.py b/pylint/reporters/text.py\nindex 29bd46798..e8584e3b3 100644\n--- a/pylint/reporters/text.py\n+++ b/pylint/reporters/text.py\n@@ -175,7 +175,7 @@ class TextReporter(BaseReporter):\n         self._template = template\n \n         # Check to see if all parameters in the template are attributes of the Message\n-        arguments = re.findall(r\"\\{(.+?)(:.*)?\\}\", template)\n+        arguments = re.findall(r\"\\{(\\w+?)(:.*)?\\}\", template)\n         for argument in arguments:\n             if argument[0] not in MESSAGE_FIELDS:\n                 warnings.warn(\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\n**Root cause:** In `pylint/reporters/text.py`, `TextReporter.on_set_current_module` used the regex `r\"\\{(.+?)(:.*)?\\}\"` to find format placeholders in the `--msg-template`. The `(.+?)` matched *anything*, including punctuation like the `{ \"Category\"` portion of a literal‑brace template such as `{{ \"Category\": \"{category}\" }}`. Pylint therefore reported `{ \"Category\"` as an unknown argument and stripped it out, leaving the broken output.\n\n**Fix:** Restrict placeholder names to valid Python format‑field identifiers using `\\w+`:\n\n```python\narguments = re.findall(r\"\\{(\\w+?)(:.*)?\\}\", template)\n```\n\nNow the literal braces are ignored (they don't form a bare `{\\w+}` field), so `{{ \"Category\": \"{category}\" }}` is passed through unchanged to `str.format`, while genuinely unknown fields like `{a_new_option}` are still detected and warned about.\n\nVerified with a quick simulation:\n- `{{ \"Category\": \"{category}\" }}` → no warnings, template preserved.\n- `{path}:{line}:{a_new_option}:({a_second_new_option:03d})` → both unknown args still detected and stripped as before.\n\nOnly `pylint/reporters/text.py` was modified (no tests or commits touched)."
+}

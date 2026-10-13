@@ -1,0 +1,43 @@
+{
+  "instance_id": "pytest-dev__pytest-5103",
+  "status": "ERROR",
+  "duration_seconds": 139.3038763999939,
+  "turns": 22,
+  "tool_calls": [
+    "bash",
+    "glob",
+    "bash",
+    "read_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "web_fetch",
+    "bash",
+    "web_search",
+    "bash",
+    "bash",
+    "edit_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/pytest-dev__pytest-5103.patch",
+  "patch_content": "diff --git a/src/_pytest/assertion/rewrite.py b/src/_pytest/assertion/rewrite.py\nindex 2903b8995..5cb0dd6d1 100644\n--- a/src/_pytest/assertion/rewrite.py\n+++ b/src/_pytest/assertion/rewrite.py\n@@ -968,6 +968,8 @@ warn_explicit(\n         \"\"\"\n         visit `ast.Call` nodes on Python3.5 and after\n         \"\"\"\n+        if isinstance(call.func, ast.Name) and call.func.id == \"all\":\n+            return self._visit_all(call)\n         new_func, func_expl = self.visit(call.func)\n         arg_expls = []\n         new_args = []\n@@ -991,6 +993,27 @@ warn_explicit(\n         outer_expl = \"%s\\n{%s = %s\\n}\" % (res_expl, res_expl, expl)\n         return res, outer_expl\n \n+    def _visit_all(self, call):\n+        \"\"\"Special rewrite for the builtin all function, see #5062\"\"\"\n+        if not isinstance(call.args[0], (ast.GeneratorExp, ast.ListComp)):\n+            return\n+        gen_exp = call.args[0]\n+        assertion_module = ast.Module(\n+            body=[ast.Assert(test=gen_exp.elt, lineno=1, msg=\"\", col_offset=1)]\n+        )\n+        AssertionRewriter(module_path=None, config=None).run(assertion_module)\n+        for_loop = ast.For(\n+            iter=gen_exp.generators[0].iter,\n+            target=gen_exp.generators[0].target,\n+            body=assertion_module.body,\n+            orelse=[],\n+        )\n+        self.statements.append(for_loop)\n+        return (\n+            ast.Num(n=1),\n+            \"\",\n+        )  # Return an empty expression, all the asserts are in the for_loop\n+\n     def visit_Starred(self, starred):\n         # From Python 3.5, a Starred node can appear in a function call\n         res, expl = self.visit(starred.value)\n",
+  "error_message": "已达到单次任务最大轮数限制 (22 轮)。如需继续推进，可使用 /turns 提高限制或直接输入指令继续。",
+  "agent_summary": "任务达到最大轮数限制，已暂停。"
+}
