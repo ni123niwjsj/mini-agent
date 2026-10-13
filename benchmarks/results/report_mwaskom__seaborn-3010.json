@@ -1,0 +1,52 @@
+{
+  "summary": {
+    "timestamp": "2026-10-13 16:02:32",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "total_tasks": 1,
+    "resolved_tasks": 0,
+    "resolved_rate": 0.0,
+    "avg_turns": 11.0,
+    "avg_duration": 71.52163696289062
+  },
+  "results": [
+    {
+      "instance_id": "mwaskom__seaborn-3010",
+      "resolved": false,
+      "agent_status": "SUCCESS",
+      "turns": 11,
+      "duration_seconds": 71.52163696289062,
+      "tool_calls": [
+        "read_file",
+        "read_file",
+        "read_file",
+        "grep",
+        "read_file",
+        "read_file",
+        "grep",
+        "grep",
+        "read_file",
+        "edit_file",
+        "bash",
+        "bash",
+        "bash",
+        "bash",
+        "bash"
+      ],
+      "tokens": {
+        "prompt": 0,
+        "completion": 0,
+        "total": 0
+      },
+      "patch_content": "diff --git a/seaborn/_stats/regression.py b/seaborn/_stats/regression.py\nindex 7b7ddc8d..c2044f1a 100644\n--- a/seaborn/_stats/regression.py\n+++ b/seaborn/_stats/regression.py\n@@ -38,7 +38,7 @@ class PolyFit(Stat):\n \n     def __call__(self, data, groupby, orient, scales):\n \n-        return groupby.apply(data, self._fit_predict)\n+        return groupby.apply(data.dropna(subset=[\"x\", \"y\"]), self._fit_predict)\n \n \n @dataclass\n",
+      "patch_applied": true,
+      "patch_error": null,
+      "fail_to_pass": {
+        "tests/_stats/test_regression.py::TestPolyFit::test_missing_data": "FAILED"
+      },
+      "pass_to_pass": {
+        "tests/_stats/test_regression.py::TestPolyFit::test_no_grouper": "FAILED",
+        "tests/_stats/test_regression.py::TestPolyFit::test_one_grouper": "FAILED"
+      }
+    }
+  ]
+}

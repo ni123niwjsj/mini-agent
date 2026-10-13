@@ -63,11 +63,17 @@ class BashTool(BaseTool):
 
         try:
             # 2. 异步启动子进程 (开启新会话/进程组，便于超时整树强杀)
+            env = os.environ.copy()
+            for p in [os.path.join(self.cwd, ".venv", "bin"), os.path.expanduser("~/code/我的项目/mini-agent/.venv/bin")]:
+                if os.path.exists(p) and p not in env.get("PATH", ""):
+                    env["PATH"] = f"{p}:{env.get('PATH', '')}"
+
             process = await asyncio.create_subprocess_shell(
                 command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=self.cwd,
+                env=env,
                 start_new_session=True,
             )
 

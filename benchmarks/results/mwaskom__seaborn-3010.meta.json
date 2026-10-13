@@ -1,0 +1,32 @@
+{
+  "instance_id": "mwaskom__seaborn-3010",
+  "status": "SUCCESS",
+  "duration_seconds": 71.52163696289062,
+  "turns": 11,
+  "tool_calls": [
+    "read_file",
+    "read_file",
+    "read_file",
+    "grep",
+    "read_file",
+    "read_file",
+    "grep",
+    "grep",
+    "read_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/mwaskom__seaborn-3010.patch",
+  "patch_content": "diff --git a/seaborn/_stats/regression.py b/seaborn/_stats/regression.py\nindex 7b7ddc8d..c2044f1a 100644\n--- a/seaborn/_stats/regression.py\n+++ b/seaborn/_stats/regression.py\n@@ -38,7 +38,7 @@ class PolyFit(Stat):\n \n     def __call__(self, data, groupby, orient, scales):\n \n-        return groupby.apply(data, self._fit_predict)\n+        return groupby.apply(data.dropna(subset=[\"x\", \"y\"]), self._fit_predict)\n \n \n @dataclass\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\n**Root cause:** `PolyFit._fit_predict` passed raw `x` and `y` columns directly to `np.polyfit`. When the data contained null values (e.g., `None`/`NaN`), NumPy's least-squares solver (`lstsq`) received NaN inputs and raised `LinAlgError: SVD did not converge in Linear Least Squares`.\n\n**Fix:** In `seaborn/_stats/regression.py`, drop rows with missing `x` or `y` values before applying the fit, matching how other stats (e.g., `Agg`, `Est`) handle missing data:\n\n```python\ndef __call__(self, data, groupby, orient, scales):\n    return groupby.apply(data.dropna(subset=[\"x\", \"y\"]), self._fit_predict)\n```\n\nUsing `subset=[\"x\", \"y\"]` ensures only rows missing the coordinates being fit are dropped, preserving rows that may be missing purely for aesthetic/semantic variables. The change is minimal, one line, and doesn't alter behavior when there is no missing data."
+}

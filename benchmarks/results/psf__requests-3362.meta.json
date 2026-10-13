@@ -1,0 +1,34 @@
+{
+  "instance_id": "psf__requests-3362",
+  "status": "SUCCESS",
+  "duration_seconds": 75.42065834999084,
+  "turns": 14,
+  "tool_calls": [
+    "bash",
+    "grep",
+    "read_file",
+    "grep",
+    "read_file",
+    "read_file",
+    "read_file",
+    "read_file",
+    "read_file",
+    "bash",
+    "web_search",
+    "web_fetch",
+    "web_fetch",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/psf__requests-3362.patch",
+  "patch_content": "diff --git a/requests/utils.py b/requests/utils.py\nindex 8d17b6b2..b74fca58 100644\n--- a/requests/utils.py\n+++ b/requests/utils.py\n@@ -359,12 +359,20 @@ def get_encoding_from_headers(headers):\n def stream_decode_response_unicode(iterator, r):\n     \"\"\"Stream decodes a iterator.\"\"\"\n \n-    if r.encoding is None:\n-        for item in iterator:\n-            yield item\n-        return\n+    encoding = r.encoding\n+\n+    if encoding is None:\n+        encoding = r.apparent_encoding\n+\n+    try:\n+        decoder = codecs.getincrementaldecoder(encoding)(errors='replace')\n+    except (LookupError, TypeError):\n+        # A LookupError is raised if the encoding was not found which could\n+        # indicate a misspelling or similar mistake.\n+        #\n+        # A TypeError can be raised if encoding is None\n+        raise UnicodeError(\"Unable to decode contents with encoding %s.\" % encoding)\n \n-    decoder = codecs.getincrementaldecoder(r.encoding)(errors='replace')\n     for chunk in iterator:\n         rv = decoder.decode(chunk)\n         if rv:\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\n**Root cause:** In `requests/utils.py`, `stream_decode_response_unicode()` bailed out early and yielded raw bytes whenever `r.encoding` was `None`:\n\n```python\nif r.encoding is None:\n    for item in iterator:\n        yield item\n    return\n```\n\nFor `application/json` (and any response without a `charset`), `get_encoding_from_headers` returns `None`, so `decode_unicode=True` silently produced bytes — contradicting `r.text`, which falls back to `apparent_encoding` (chardet) in that case.\n\n**Fix:** Mirror the `text` property's behavior — when `r.encoding` is `None`, fall back to `r.apparent_encoding`, and guard decoder construction so an unusable/`None` encoding raises a clear `UnicodeError` instead of leaking a `LookupError`/`TypeError`. This makes `iter_content(decode_unicode=True)` always yield `str`.\n\nChange is confined to `requests/utils.py` (13 insertions, 5 deletions), verified via `git diff` and `py_compile`. No tests or other files were modified."
+}

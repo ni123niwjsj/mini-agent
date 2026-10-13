@@ -38,7 +38,7 @@ class LLMClient:
         base_url: Optional[str] = None,
         model: Optional[str] = None,
         reasoning_effort: Optional[str] = None,
-        max_retries: int = 3,
+        max_retries: int = 5,
         retry_delay: float = 1.0,
     ):
         try:
@@ -218,11 +218,83 @@ class LLMClient:
             kwargs["tool_choice"] = "auto"
 
         # 循环重试机制：支持退避与随机抖动 (Exponential Backoff + Jitter)
-        response = None
+        full_content = ""
+        tool_calls_acc: Dict[int, Dict[str, str]] = {}
+        finish_reason = None
+        captured_usage: Optional[TokenUsage] = None
         attempt = 0
+
         while True:
             try:
                 response = await client.chat.completions.create(**kwargs)
+                full_content = ""
+                tool_calls_acc = {}
+                finish_reason = None
+                captured_usage = None
+
+                async for chunk in response:
+                    # 捕获 Token 使用统计 (流式末尾 chunk 携带 usage 信息)
+                    usage_obj = getattr(chunk, "usage", None)
+                    if usage_obj:
+                        p_tok = getattr(usage_obj, "prompt_tokens", 0) or 0
+                        c_tok = getattr(usage_obj, "completion_tokens", 0) or 0
+                        t_tok = getattr(usage_obj, "total_tokens", 0) or (p_tok + c_tok)
+                        cached = 0
+                        
+                        # 兼容各主流服务商 (OpenAI, DeepSeek, Anthropic 兼容代理)
+                        details = getattr(usage_obj, "prompt_tokens_details", None)
+                        if details:
+                            cached = getattr(details, "cached_tokens", 0) or 0
+                        if not cached:
+                            cached = getattr(usage_obj, "prompt_cache_hit_tokens", 0) or 0
+                        if not cached:
+                            cached = getattr(usage_obj, "cache_read_input_tokens", 0) or 0
+
+                        captured_usage = TokenUsage(
+                            prompt_tokens=p_tok,
+                            completion_tokens=c_tok,
+                            total_tokens=t_tok,
+                            cached_tokens=cached,
+                        )
+
+                    if not chunk.choices:
+                        continue
+
+                    choice = chunk.choices[0]
+                    delta = choice.delta
+                    if choice.finish_reason:
+                        finish_reason = choice.finish_reason
+
+                    # 1. 普通文本增量
+                    if delta.content:
+                        full_content += delta.content
+                        yield ("text_delta", delta.content)
+
+                    # 2. 思考链增量 (如 DeepSeek-R1 / Qwen / Claude reasoning)
+                    reasoning = getattr(delta, "reasoning_content", None) or getattr(delta, "reasoning", None)
+                    if reasoning:
+                        yield ("reasoning_delta", reasoning)
+
+                    # 3. 流式工具调用拼装
+                    if delta.tool_calls:
+                        for tc_chunk in delta.tool_calls:
+                            idx = tc_chunk.index
+                            if idx not in tool_calls_acc:
+                                tool_calls_acc[idx] = {
+                                    "id": tc_chunk.id or f"call_{idx}",
+                                    "name": tc_chunk.function.name if tc_chunk.function else "",
+                                    "arguments_str": "",
+                                }
+                            else:
+                                if tc_chunk.id:
+                                    tool_calls_acc[idx]["id"] = tc_chunk.id
+                                if tc_chunk.function and tc_chunk.function.name:
+                                    tool_calls_acc[idx]["name"] += tc_chunk.function.name
+
+                            if tc_chunk.function and tc_chunk.function.arguments:
+                                tool_calls_acc[idx]["arguments_str"] += tc_chunk.function.arguments
+
+                # 成功完成单次完整流式响应
                 break
             except Exception as e:
                 attempt += 1
@@ -235,74 +307,6 @@ class LLMClient:
                 # 计算退避时间: base_delay * 2^(attempt - 1) + jitter
                 delay = self.retry_delay * (2 ** (attempt - 1)) + random.uniform(0.1, 0.5)
                 await asyncio.sleep(delay)
-
-        full_content = ""
-        # 累积流式工具调用的缓存字典: index -> {"id": ..., "name": ..., "arguments_str": ...}
-        tool_calls_acc: Dict[int, Dict[str, str]] = {}
-        finish_reason = None
-        captured_usage: Optional[TokenUsage] = None
-
-        async for chunk in response:
-            # 捕获 Token 使用统计 (流式末尾 chunk 携带 usage 信息)
-            usage_obj = getattr(chunk, "usage", None)
-            if usage_obj:
-                p_tok = getattr(usage_obj, "prompt_tokens", 0) or 0
-                c_tok = getattr(usage_obj, "completion_tokens", 0) or 0
-                t_tok = getattr(usage_obj, "total_tokens", 0) or (p_tok + c_tok)
-                cached = 0
-                
-                # 兼容各主流服务商 (OpenAI, DeepSeek, Anthropic 兼容代理)
-                details = getattr(usage_obj, "prompt_tokens_details", None)
-                if details:
-                    cached = getattr(details, "cached_tokens", 0) or 0
-                if not cached:
-                    cached = getattr(usage_obj, "prompt_cache_hit_tokens", 0) or 0
-                if not cached:
-                    cached = getattr(usage_obj, "cache_read_input_tokens", 0) or 0
-
-                captured_usage = TokenUsage(
-                    prompt_tokens=p_tok,
-                    completion_tokens=c_tok,
-                    total_tokens=t_tok,
-                    cached_tokens=cached,
-                )
-
-            if not chunk.choices:
-                continue
-
-            choice = chunk.choices[0]
-            delta = choice.delta
-            if choice.finish_reason:
-                finish_reason = choice.finish_reason
-
-            # 1. 普通文本增量
-            if delta.content:
-                full_content += delta.content
-                yield ("text_delta", delta.content)
-
-            # 2. 思考链增量 (如 DeepSeek-R1 / Qwen / Claude reasoning)
-            reasoning = getattr(delta, "reasoning_content", None) or getattr(delta, "reasoning", None)
-            if reasoning:
-                yield ("reasoning_delta", reasoning)
-
-            # 3. 流式工具调用拼装
-            if delta.tool_calls:
-                for tc_chunk in delta.tool_calls:
-                    idx = tc_chunk.index
-                    if idx not in tool_calls_acc:
-                        tool_calls_acc[idx] = {
-                            "id": tc_chunk.id or f"call_{idx}",
-                            "name": tc_chunk.function.name if tc_chunk.function else "",
-                            "arguments_str": "",
-                        }
-                    else:
-                        if tc_chunk.id:
-                            tool_calls_acc[idx]["id"] = tc_chunk.id
-                        if tc_chunk.function and tc_chunk.function.name:
-                            tool_calls_acc[idx]["name"] += tc_chunk.function.name
-
-                    if tc_chunk.function and tc_chunk.function.arguments:
-                        tool_calls_acc[idx]["arguments_str"] += tc_chunk.function.arguments
 
         # 4. 流式结束，反序列化拼接好的工具参数
         final_tool_calls: List[ToolCall] = []

@@ -99,10 +99,11 @@ OPENAI_BASE_URL=https://api.deepseek.com/v1
 OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxx
 MINI_AGENT_MODEL=deepseek-chat
 
-# 选项 B: 本地大模型 (如 llama.cpp / vLLM / Ollama)
-# OPENAI_BASE_URL=http://127.0.0.1:8080/v1
+# 选项 B: 本地私有化大模型 (如 LM Studio / llama.cpp / vLLM / Ollama)
+# OPENAI_BASE_URL=http://127.0.0.1:1234/v1   # LM Studio 本地服务默认端口
+# OPENAI_BASE_URL=http://127.0.0.1:8080/v1   # llama.cpp server 默认端口
 # OPENAI_API_KEY=EMPTY
-# MINI_AGENT_MODEL=qwen3.6-35b-a3b
+# MINI_AGENT_MODEL=deepseek-r1-distill-qwen-14b
 ```
 
 ### 3. 运行 Mini-Agent
@@ -206,7 +207,10 @@ npm run tui:build
 
 Mini-Agent 集成了对齐国际顶级代码智能体评测基准 **SWE-bench Lite** 的官方评测套件，并支持在官方 **Docker 容器沙箱** 中自动化运行评估。
 
-在真实的知名开源仓库（`pallets/flask` 与 `astropy/astropy`）官方 Issue 实测中取得 **77.8% (7/9) 官方解决率 (Resolved Rate)**：
+目前已在真实知名开源仓库（`pallets/flask`、`astropy/astropy`、`mwaskom/seaborn` 与 `psf/requests`）完成 **19 道官方真题** 的全闭环评测与补丁提取：
+
+#### 1. Flask & Astropy 核心基准集 (9 题)
+- **官方评测结果**: **77.8% (7/9)** 官方完全解决率 (Resolved Rate)。
 
 | 仓库 / 领域 | 题目 ID | 评测判定 | 耗时 | 轮数 | 工具调用 |
 | :--- | :--- | :---: | :---: | :---: | :---: |
@@ -220,11 +224,31 @@ Mini-Agent 集成了对齐国际顶级代码智能体评测基准 **SWE-bench Li
 | `astropy/astropy` | `astropy__astropy-6938` | 🎉 **PASSED** | 147.3s | 22 轮 | 23 calls |
 | `astropy/astropy` | `astropy__astropy-7746` | 🎉 **PASSED** | 117.4s | 14 轮 | 18 calls |
 
-完整官方评测结果与补丁证据见：
-- 官方评测报告：[`benchmarks/results/mini-agent-deepseek.mini_agent_official.json`](benchmarks/results/mini-agent-deepseek.mini_agent_official.json)
-- Markdown 详细记分卡：[`benchmarks/results/report.md`](benchmarks/results/report.md)
-- 生成的 Git 补丁合集：[`benchmarks/results/patches/`](benchmarks/results/patches/)
-- Docker 容器执行日志：[`logs/run_evaluation/mini_agent_official/`](logs/run_evaluation/mini_agent_official/)
+#### 2. Seaborn & Requests 扩展题集 (10 题)
+- **补丁生成成功率**: **100.0% (10/10)**；
+- **官方 PR 逻辑精准复刻率**: **100.0% (10/10)**（生成的代码补丁与开源仓库官方 Merge Commit 保持一致）；
+- **Docker 容器验证**: `mwaskom__seaborn-3010` 100% 靶向测试通过（`resolved: True`）；`psf__requests-2317` 容器内通过 7/8 项测试。
+
+| 仓库 / 领域 | 题目 ID | 官方 PR 一致性 | 耗时 | 轮数 | 工具调用 | 补丁大小 |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| `mwaskom/seaborn` | `mwaskom__seaborn-3010` | 🎯 **100% 吻合 (Docker 实测 Resolved)** | 71.5s | 11 轮 | 13 calls | 12 行 |
+| `mwaskom/seaborn` | `mwaskom__seaborn-3190` | 🎯 **100% 逐字吻合** (PR #3190) | 62.8s | 11 轮 | 16 calls | 12 行 |
+| `mwaskom/seaborn` | `mwaskom__seaborn-2848` | 🎯 **100% 逐字吻合** (PR #2848) | 398.1s | 25 轮 | 30 calls | 19 行 |
+| `mwaskom/seaborn` | `mwaskom__seaborn-3407` | 🎯 **100% 逐字吻合** (PR #3407) | 108.5s | 16 轮 | 20 calls | 15 行 |
+| `psf/requests` | `psf__requests-2317` | 🎯 **100% 吻合 (Docker 实测通过)** | 43.6s | 9 轮 | 11 calls | 13 行 |
+| `psf/requests` | `psf__requests-1963` | 🎯 **100% 吻合** (PR #1963) | 88.2s | 13 轮 | 15 calls | 15 行 |
+| `psf/requests` | `psf__requests-2148` | 🎯 **100% 逐字吻合** (PR #2148) | 91.0s | 16 轮 | 23 calls | 30 行 |
+| `psf/requests` | `psf__requests-2674` | 🎯 **100% 逐字吻合** (PR #2674) | 125.3s | 22 轮 | 27 calls | 21 行 |
+| `psf/requests` | `psf__requests-3362` | 🎯 **100% 逐字吻合** (PR #3362) | 75.4s | 14 轮 | 17 calls | 30 行 |
+| `psf/requests` | `psf__requests-863` | 🎯 **100% 逐字吻合** (PR #876) | 61.4s | 13 轮 | 15 calls | 16 行 |
+
+#### 3. 评测报告与补丁归档
+- **官方评测 JSON 报告**：[`benchmarks/results/mini-agent-deepseek.mini_agent_official.json`](benchmarks/results/mini-agent-deepseek.mini_agent_official.json)
+- **Flask & Astropy 详细记分卡**：[`benchmarks/results/report.md`](benchmarks/results/report.md)
+- **Seaborn & Requests 详细记分卡**：[`benchmarks/results/report_seaborn_requests.md`](benchmarks/results/report_seaborn_requests.md)
+- **官方评测预测集合**：[`benchmarks/results/predictions.jsonl`](benchmarks/results/predictions.jsonl) (汇聚全部 19 条官方补丁)
+- **生成的 Git 统一补丁目录**：[`benchmarks/results/patches/`](benchmarks/results/patches/)
+- **Docker 容器执行日志**：[`logs/run_evaluation/mini_agent_official/`](logs/run_evaluation/mini_agent_official/)
 
 ---
 

@@ -1,0 +1,32 @@
+{
+  "instance_id": "psf__requests-863",
+  "status": "SUCCESS",
+  "duration_seconds": 61.372498750686646,
+  "turns": 13,
+  "tool_calls": [
+    "bash",
+    "grep",
+    "read_file",
+    "read_file",
+    "bash",
+    "bash",
+    "read_file",
+    "read_file",
+    "bash",
+    "read_file",
+    "bash",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/psf__requests-863.patch",
+  "patch_content": "diff --git a/requests/models.py b/requests/models.py\nindex d8456375..0b41510a 100644\n--- a/requests/models.py\n+++ b/requests/models.py\n@@ -149,7 +149,10 @@ class Request(object):\n         hooks = hooks or {}\n \n         for (k, v) in list(hooks.items()):\n-            self.register_hook(event=k, hook=v)\n+            if not isinstance(v, (list, tuple)):\n+                v = [v]\n+            for hook in v:\n+                self.register_hook(event=k, hook=hook)\n \n         #: Session.\n         self.session = session\n",
+  "error_message": null,
+  "agent_summary": "The fix is complete and minimal.\n\n## Summary\n\n**Root cause:** In `Request.__init__()` (requests/models.py), the `hooks` dictionary was iterated and each value `v` was passed directly to `self.register_hook(event=k, hook=v)`. `register_hook` simply does `self.hooks[event].append(hook)`. So when a user passed a list of hook functions (e.g. `{'args': [add_foo_header, add_bar_header]}`), the entire list was appended as a single element of the hooks list. When hooks were later consumed via `dispatch_hook`, the code checks `hasattr(hooks, '__call__')` — a nested list is not callable, so iterating over it produced non-callable elements, causing failures.\n\n**Fix:** In `Request.__init__`, normalize each hook value: if it is not already a list/tuple, wrap it in a single-element list, then register each hook individually. This makes list-valued hooks work while preserving single-callable behavior.\n\n```python\nfor (k, v) in list(hooks.items()):\n    if not isinstance(v, (list, tuple)):\n        v = [v]\n    for hook in v:\n        self.register_hook(event=k, hook=hook)\n```\n\nThis aligns with the pre-existing `test_multiple_hooks` test and existing `dispatch_hook` logic (which already handles both callables and iterables). Note: full test-suite execution wasn't possible here because this environment's Python 3.14 lacks the removed stdlib `cgi` module that the old `requests/utils.py` imports, but the change was validated against the relevant logic in isolation."
+}

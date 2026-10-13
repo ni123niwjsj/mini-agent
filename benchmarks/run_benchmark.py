@@ -291,11 +291,17 @@ async def main():
 
     # 导出报告
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    report_json_path = os.path.join(RESULTS_DIR, "report.json")
+    if args.task == "all":
+        report_json_path = os.path.join(RESULTS_DIR, "report.json")
+        report_md_path = os.path.join(RESULTS_DIR, "report.md")
+    else:
+        safe_task_name = args.task.replace("/", "_").replace(".json", "")
+        report_json_path = os.path.join(RESULTS_DIR, f"report_{safe_task_name}.json")
+        report_md_path = os.path.join(RESULTS_DIR, f"report_{safe_task_name}.md")
+
     with open(report_json_path, "w", encoding="utf-8") as fp:
         json.dump({"summary": summary, "results": final_results}, fp, indent=2, ensure_ascii=False)
 
-    report_md_path = os.path.join(RESULTS_DIR, "report.md")
     md_content = generate_markdown_report(summary, final_results)
     with open(report_md_path, "w", encoding="utf-8") as fp:
         fp.write(md_content)

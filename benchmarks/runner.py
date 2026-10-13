@@ -157,7 +157,7 @@ class BenchmarkRunner:
             f"=== Instructions ===\n"
             f"1. Explore the codebase using grep, glob, or read_file to inspect the relevant files.\n"
             f"2. Modify the code to fix the issue using edit_file or write_file.\n"
-            f"3. Run existing tests or check git diff to verify your changes.\n"
+            f"3. Verify your changes via git diff. (Note: Third-party dependencies for running full test suites are evaluated in Docker containers; focus on analyzing the root cause, applying the clean minimal fix, and checking git diff).\n"
             f"4. Do NOT modify tests or commit git changes. Only edit the source code required to fix the issue.\n"
             f"5. When completed, briefly summarize the fix.\n"
         )

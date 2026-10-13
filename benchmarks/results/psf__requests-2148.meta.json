@@ -1,0 +1,40 @@
+{
+  "instance_id": "psf__requests-2148",
+  "status": "SUCCESS",
+  "duration_seconds": 90.96804928779602,
+  "turns": 16,
+  "tool_calls": [
+    "bash",
+    "glob",
+    "read_file",
+    "read_file",
+    "read_file",
+    "read_file",
+    "grep",
+    "read_file",
+    "read_file",
+    "grep",
+    "bash",
+    "bash",
+    "web_search",
+    "bash",
+    "bash",
+    "edit_file",
+    "edit_file",
+    "edit_file",
+    "bash",
+    "bash",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/psf__requests-2148.patch",
+  "patch_content": "diff --git a/requests/models.py b/requests/models.py\nindex 0dc55568..2ababaf8 100644\n--- a/requests/models.py\n+++ b/requests/models.py\n@@ -9,6 +9,7 @@ This module contains the primary objects that power Requests.\n \n import collections\n import datetime\n+import socket\n \n from io import BytesIO, UnsupportedOperation\n from .hooks import default_hooks\n@@ -22,7 +23,7 @@ from .packages.urllib3.util import parse_url\n from .packages.urllib3.exceptions import DecodeError\n from .exceptions import (\n     HTTPError, RequestException, MissingSchema, InvalidURL,\n-    ChunkedEncodingError, ContentDecodingError)\n+    ChunkedEncodingError, ContentDecodingError, ConnectionError)\n from .utils import (\n     guess_filename, get_auth_from_url, requote_uri,\n     stream_decode_response_unicode, to_key_val_list, parse_header_links,\n@@ -640,6 +641,8 @@ class Response(object):\n                     raise ChunkedEncodingError(e)\n                 except DecodeError as e:\n                     raise ContentDecodingError(e)\n+                except socket.error as e:\n+                    raise ConnectionError(e)\n             except AttributeError:\n                 # Standard file-like object.\n                 while True:\n",
+  "error_message": null,
+  "agent_summary": "The log"
+}

@@ -1,0 +1,175 @@
+# 🏆 Mini-Agent SWE-bench 基准评测报告
+
+- **评测时间**: 2026-10-13 16:54:13
+- **评估模型**: `deepseek/deepseek-v4.1-flash`
+- **总测试题目**: 1
+- **成功解决 (Resolved)**: 0 / 1 (0.0%)
+- **平均轮数**: 22.0 轮
+- **平均耗时**: 125.26s
+
+## 📊 评测明细总表
+
+| 题目编号 (Instance ID) | 修复状态 | 评测结论 | 轮数 | 耗时 | 工具调用 | 补丁大小 |
+| :--- | :---: | :---: | :---: | :---: | :--- | :---: |
+| `psf__requests-2674` | ✅ | 🔴 **FAIL** | 22 | 125.3s | `web_fetch, glob, bash, web_search, read_file, grep, edit_file` | 21 行 |
+
+## 🔍 用例测试细节
+
+### `psf__requests-2674`
+- **解决状态**: 未解决
+- **FAIL_TO_PASS 校验**:
+  - ❌ `test_requests.py::RequestsTestCase::test_BASICAUTH_TUPLE_HTTP_200_OK_GET`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_ALTERNATIVE`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_WITH_PARAMS`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_HTTP_200_OK_HEAD`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_auth_is_retained_for_redirect_on_host`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_different_encodings_dont_break_post`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_manual_redirect_with_partial_body_read`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_prepared_from_session`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_unicode_multipart_post`: FAILED
+  - ❌ `test_requests.py::TestTimeout::test_none_timeout`: FAILED
+  - ❌ `test_requests.py::TestTimeout::test_encoded_methods`: FAILED
+- **PASS_TO_PASS 校验**:
+  - ❌ `test_requests.py::RequestsTestCase::test_DIGESTAUTH_QUOTES_QOP_VALUE`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_DIGESTAUTH_WRONG_HTTP_401_GET`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_DIGEST_AUTH_RETURNS_COOKIE`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_DIGEST_AUTH_SETS_SESSION_COOKIES`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_DIGEST_STREAM`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_WITH_MIXED_PARAMS`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_HTTP_200_OK_PUT`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_LocationParseError`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES_WITH_DATA`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_auth_is_stripped_on_redirect_off_host`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_autoset_header_values_are_native`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_basic_auth_str_is_always_native`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_basic_building`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_basicauth_with_netrc`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_can_send_bytes_bytearray_objects_with_files`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_can_send_file_object_with_non_string_filename`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_can_send_nonstring_objects_with_files`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_cannot_send_unprepared_requests`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_connection_error_invalid_domain`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_connection_error_invalid_port`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_cookie_as_dict_items`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_cookie_as_dict_keeps_items`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_cookie_as_dict_keeps_len`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_cookie_as_dict_keys`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_cookie_as_dict_values`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_cookie_parameters`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_cookie_persists_via_api`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_cookie_quote_wrapped`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_cookie_removed_on_expire`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_custom_content_type`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_decompress_gzip`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_entry_points`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_fixes_1329`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_generic_cookiejar_works`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_get_auth_from_url`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_get_auth_from_url_encoded_hashes`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_get_auth_from_url_encoded_spaces`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_get_auth_from_url_not_encoded_spaces`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_get_auth_from_url_percent_chars`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_header_keys_are_native`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_header_remove_is_case_insensitive`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_headers_on_session_with_None_are_not_sent`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_history_is_always_a_list`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_hook_receives_request_arguments`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_http_error`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_invalid_url`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_json_param_post_content_type_works`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_links`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_long_authinfo_in_url`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_no_content_length`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_nonhttp_schemes_dont_check_URLs`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_override_content_length`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_params_are_added_before_fragment`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_params_are_merged_case_sensitive`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_path_is_not_double_encoded`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_prepare_request_with_bytestring_url`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_prepared_request_hook`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_pyopenssl_redirect`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_redirect_with_wrong_gzipped_header`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_request_and_response_are_pickleable`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_request_cookie_overrides_session_cookie`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_request_cookies_not_persisted`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_request_ok_set`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_requests_in_history_are_not_overridden`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_response_decode_unicode`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_response_is_iterable`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_response_iter_lines`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_session_hooks_are_overriden_by_request_hooks`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_session_hooks_are_used_with_no_request_hooks`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_session_pickling`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_set_cookie_on_301`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_status_raising`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_time_elapsed_blank`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_transport_adapter_ordering`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_unconsumed_session_response_closes_connection`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_unicode_get`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_unicode_header_name`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_unicode_method_name`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_unicode_multipart_post_fieldnames`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_uppercase_scheme_redirect`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_urlencoded_get_query_multivalued_param`: FAILED
+  - ❌ `test_requests.py::RequestsTestCase::test_user_agent_transfers`: FAILED
+  - ❌ `test_requests.py::TestContentEncodingDetection::test_html4_pragma`: FAILED
+  - ❌ `test_requests.py::TestContentEncodingDetection::test_html_charset`: FAILED
+  - ❌ `test_requests.py::TestContentEncodingDetection::test_none`: FAILED
+  - ❌ `test_requests.py::TestContentEncodingDetection::test_precedence`: FAILED
+  - ❌ `test_requests.py::TestContentEncodingDetection::test_xhtml_pragma`: FAILED
+  - ❌ `test_requests.py::TestContentEncodingDetection::test_xml`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_contains`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_copy`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_delitem`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_docstring_example`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_equality`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_fixes_649`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_get`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_getitem`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_iter`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_iterable_init`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_kwargs_init`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_len`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_lower_items`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_mapping_init`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_preserve_key_case`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_preserve_last_key_case`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_repr`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_setdefault`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_update`: FAILED
+  - ❌ `test_requests.py::TestCaseInsensitiveDict::test_update_retains_unchanged`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_address_in_network`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_dotted_netmask`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_get_auth_from_url`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_get_environ_proxies`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_get_environ_proxies_ip_ranges`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_guess_filename_when_filename_is_an_int`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_guess_filename_when_int`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_guess_filename_with_file_like_obj`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_guess_filename_with_unicode_name`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_is_ipv4_address`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_is_valid_cidr`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_requote_uri_properly_requotes`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_requote_uri_with_unquoted_percents`: FAILED
+  - ❌ `test_requests.py::UtilsTestCase::test_super_len_io_streams`: FAILED
+  - ❌ `test_requests.py::TestMorselToCookieExpires::test_expires_invalid_int`: FAILED
+  - ❌ `test_requests.py::TestMorselToCookieExpires::test_expires_invalid_str`: FAILED
+  - ❌ `test_requests.py::TestMorselToCookieExpires::test_expires_none`: FAILED
+  - ❌ `test_requests.py::TestMorselToCookieExpires::test_expires_valid_str`: FAILED
+  - ❌ `test_requests.py::TestMorselToCookieMaxAge::test_max_age_invalid_str`: FAILED
+  - ❌ `test_requests.py::TestMorselToCookieMaxAge::test_max_age_valid_int`: FAILED
+  - ❌ `test_requests.py::TestTimeout::test_stream_timeout`: FAILED
+  - ❌ `test_requests.py::TestTimeout::test_invalid_timeout`: FAILED
+  - ❌ `test_requests.py::TestTimeout::test_read_timeout`: FAILED
+  - ❌ `test_requests.py::TestTimeout::test_connect_timeout`: FAILED
+  - ❌ `test_requests.py::TestTimeout::test_total_timeout_connect`: FAILED
+  - ❌ `test_requests.py::TestRedirects::test_requests_are_updated_each_time`: FAILED
+  - ❌ `test_requests.py::test_data_argument_accepts_tuples`: FAILED
+  - ❌ `test_requests.py::test_prepared_request_empty_copy`: FAILED
+  - ❌ `test_requests.py::test_prepared_request_no_cookies_copy`: FAILED
+  - ❌ `test_requests.py::test_prepared_request_complete_copy`: FAILED
+  - ❌ `test_requests.py::test_prepare_unicode_url`: FAILED
+  - ❌ `test_requests.py::test_urllib3_retries`: FAILED
+  - ❌ `test_requests.py::test_vendor_aliases`: FAILED

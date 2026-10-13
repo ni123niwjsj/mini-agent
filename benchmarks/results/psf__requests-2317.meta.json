@@ -1,0 +1,27 @@
+{
+  "instance_id": "psf__requests-2317",
+  "status": "SUCCESS",
+  "duration_seconds": 43.57252311706543,
+  "turns": 9,
+  "tool_calls": [
+    "grep",
+    "read_file",
+    "read_file",
+    "read_file",
+    "read_file",
+    "edit_file",
+    "grep",
+    "bash",
+    "bash",
+    "bash"
+  ],
+  "tokens": {
+    "prompt": 0,
+    "completion": 0,
+    "total": 0
+  },
+  "patch_path": "/home/shuaige/code/我的项目/mini-agent/benchmarks/results/patches/psf__requests-2317.patch",
+  "patch_content": "diff --git a/requests/sessions.py b/requests/sessions.py\nindex d701ff2e..adcfbac7 100644\n--- a/requests/sessions.py\n+++ b/requests/sessions.py\n@@ -425,7 +425,7 @@ class Session(SessionRedirectMixin):\n             If Tuple, ('cert', 'key') pair.\n         \"\"\"\n \n-        method = builtin_str(method)\n+        method = to_native_string(method)\n \n         # Create the Request.\n         req = Request(\n",
+  "error_message": null,
+  "agent_summary": "## Summary\n\n**Root cause:** In `requests/sessions.py`, `Session.request()` did:\n\n```python\nmethod = builtin_str(method)\n```\n\nOn Python 3, `builtin_str` is `str`, so passing a byte string like `b'GET'` ran `str(b'GET')`, producing the literal string `\"b'GET'\"` — the bytes *representation*, not decoded bytes. Requests then sent `b'GET'` as the HTTP method, yielding a 404. On Python 2, `builtin_str` was `bytes`/`str`, so `b'GET'` stayed `'GET'`, which is why the bug didn't appear there (and why neutronclient's `safe_encode_list`, which turns `method` into bytes, broke under Python 3.4).\n\n**Fix:** Use the existing `to_native_string` utility (already imported in `sessions.py`), which properly decodes byte strings to the native string type and passes native strings through unchanged:\n\n```python\nmethod = to_native_string(method)\n```\n\nNow `to_native_string(b'GET')` → `'GET'` instead of `\"b'GET'\"`, while ordinary string methods are unaffected. This is the same helper `utils.py` uses for safely normalizing native strings."
+}

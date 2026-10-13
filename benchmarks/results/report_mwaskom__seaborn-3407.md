@@ -1,0 +1,142 @@
+# 🏆 Mini-Agent SWE-bench 基准评测报告
+
+- **评测时间**: 2026-10-13 16:47:42
+- **评估模型**: `deepseek/deepseek-v4.1-flash`
+- **总测试题目**: 1
+- **成功解决 (Resolved)**: 0 / 1 (0.0%)
+- **平均轮数**: 16.0 轮
+- **平均耗时**: 108.53s
+
+## 📊 评测明细总表
+
+| 题目编号 (Instance ID) | 修复状态 | 评测结论 | 轮数 | 耗时 | 工具调用 | 补丁大小 |
+| :--- | :---: | :---: | :---: | :---: | :--- | :---: |
+| `mwaskom__seaborn-3407` | ✅ | 🔴 **FAIL** | 16 | 108.5s | `grep, bash, web_fetch, edit_file, read_file, web_search` | 15 行 |
+
+## 🔍 用例测试细节
+
+### `mwaskom__seaborn-3407`
+- **解决状态**: 未解决
+- **FAIL_TO_PASS 校验**:
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_pairplot_column_multiindex`: FAILED
+- **PASS_TO_PASS 校验**:
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_self_data`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_self_figure`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_self_axes`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_axes_array_size`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_single_axes`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_col_wrap`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_normal_axes`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_wrapped_axes`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_axes_dict`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_figure_size`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_figure_size_with_legend`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_legend_data`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_legend_data_missing_level`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_get_boolean_legend_data`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_legend_tuples`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_legend_options`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_legendout_with_colwrap`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_legend_tight_layout`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_subplot_kws`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_gridspec_kws`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_gridspec_kws_col_wrap`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_data_generator`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_map`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_map_dataframe`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_set`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_set_titles`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_set_titles_margin_titles`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_set_ticklabels`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_set_axis_labels`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_axis_lims`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_data_orders`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_palette`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_hue_kws`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_dropna`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_categorical_column_missing_categories`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_categorical_warning`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_refline`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_apply`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_pipe`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestFacetGrid::test_tick_params`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_self_data`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_ignore_datelike_data`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_self_figure`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_self_axes`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_default_axes`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_specific_square_axes[vars0]`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_specific_square_axes[vars1]`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_remove_hue_from_default`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_specific_nonsquare_axes[x_vars0-y_vars0]`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_specific_nonsquare_axes[x_vars1-z]`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_specific_nonsquare_axes[x_vars2-y_vars2]`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_corner`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_size`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_empty_grid`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map_nonsquare`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map_lower`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map_upper`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map_mixed_funcsig`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map_diag`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map_diag_rectangular`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map_diag_color`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map_diag_palette`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map_diag_and_offdiag`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_diag_sharey`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_map_diag_matplotlib`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_palette`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_hue_kws`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_hue_order`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_hue_order_missing_level`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_hue_in_map`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_nondefault_index`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_dropna[scatterplot]`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_dropna[scatter]`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_histplot_legend`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_pairplot`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_pairplot_reg`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_pairplot_reg_hue`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_pairplot_diag_kde`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_pairplot_kde`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_pairplot_hist`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_pairplot_markers`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_corner_despine`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_corner_set`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_legend`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestPairGrid::test_tick_params`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_margin_grid_from_lists`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_margin_grid_from_arrays`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_margin_grid_from_series`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_margin_grid_from_dataframe`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_margin_grid_from_dataframe_bad_variable`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_margin_grid_axis_labels`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_dropna`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_axlims`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_marginal_ticks`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_bivariate_plot`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_univariate_plot`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_univariate_plot_distplot`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_univariate_plot_matplotlib`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_plot`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_space`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_hue[True]`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_hue[False]`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointGrid::test_refline`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_scatter`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_scatter_hue`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_reg`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_resid`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_hist`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_hex`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_kde`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_kde_hue`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_color`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_palette`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_hex_customise`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_bad_kind`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_unsupported_hue_kind`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_leaky_dict`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_distplot_kwarg_warning`: FAILED
+  - ❌ `tests/test_axisgrid.py::TestJointPlot::test_ax_warning`: FAILED
